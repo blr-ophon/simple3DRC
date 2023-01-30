@@ -72,15 +72,34 @@ void render_2d(DisplaySettings *display){
     
     //Main ray and points
     float VecMainRay[] = {VectorDir[0],VectorDir[1]};
+    /*
     //first point P1, X
+    float VecMainRayX[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = 0;
     if(VectorDir[0] != 0){
         int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
         P1Ratio = delta_X1/fabs(VectorDir[0]);
     }
-    VecMainRay[0] *= P1Ratio;
-    VecMainRay[1] *= P1Ratio;
+    VecMainRayX[0] *= P1Ratio;
+    VecMainRayX[1] *= P1Ratio;
+    float VecMainRayXsize = P1Ratio*VecDSize;
+    */
 
+    //first point P1, Y
+    float VecMainRayY[] = {VectorDir[0],VectorDir[1]};
+    float P1Ratio = 0;
+    if(VectorDir[1] != 0){
+        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
+        P1Ratio = delta_Y1/fabs(VectorDir[1]);
+    }
+    VecMainRayY[0] *= P1Ratio;
+    VecMainRayY[1] *= P1Ratio;
+    float VecMainRayYsize = P1Ratio*VecDSize;
+
+    //logic to determine if collision happens in X or Y vector
+    VecMainRay[0] = VecMainRayY[0];
+    VecMainRay[1] = VecMainRayY[1];
+    
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, PlayerObj.x+VecMainRay[0], PlayerObj.y+VecMainRay[1]);
     SDL_RenderPresent(display->renderer);
