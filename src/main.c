@@ -29,7 +29,7 @@ int mapgrid[][8] = {
 };
 
 bool IsColliding(int x, int y){
-    return mapgrid[y/(mapS+1)][x/(mapS+1)];
+    return mapgrid[y/mapS][x/mapS];
 }
 
 
@@ -40,7 +40,7 @@ void render_2d(DisplaySettings *display){
     //grid
     for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
-            SDL_Rect GameWalls = {i*(mapS+1), j*(mapS+1), mapS, mapS};
+            SDL_Rect GameWalls = {i*mapS, j*mapS, mapS-1, mapS-1};
             SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
             if(mapgrid[j][i]){
                 SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
@@ -50,7 +50,7 @@ void render_2d(DisplaySettings *display){
     }
 
     //player
-    SDL_SetRenderDrawColor(display->renderer, 255, 255, 0, 255);
+    SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
     SDL_Rect playerRect = {
         PlayerObj.x-PlayerObj.size/2,
         PlayerObj.y-PlayerObj.size/2,
@@ -67,10 +67,22 @@ void render_2d(DisplaySettings *display){
     SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, point_E[0], point_E[1]);
 
+    //vector d
+    float VectorDir[] = {point_E[0]-PlayerObj.x, point_E[1]-PlayerObj.y};
+    
     //Main ray and points
-    float MainRayP1[2];
-    MainRayP1[0] = 
+    float VecMainRay[] = {VectorDir[0],VectorDir[1]};
+    //first point P1, X
+    float P1Ratio = 0;
+    if(VectorDir[0] != 0){
+        int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
+        P1Ratio = delta_X1/fabs(VectorDir[0]);
+    }
+    VecMainRay[0] *= P1Ratio;
+    VecMainRay[1] *= P1Ratio;
 
+    SDL_SetRenderDrawColor(display->renderer, 0, 0, 155, 255);
+    SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, PlayerObj.x+VecMainRay[0], PlayerObj.y+VecMainRay[1]);
     SDL_RenderPresent(display->renderer);
 }
 
