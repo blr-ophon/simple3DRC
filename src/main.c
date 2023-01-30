@@ -32,6 +32,41 @@ bool IsColliding(int x, int y){
     return mapgrid[y/mapS][x/mapS];
 }
 
+void castRayP1(float VectorDir[2], float VecDSize, float VecMainRay[2]){
+    //TODO: maybe switch X and Y to vertical and horizontal
+    //Main ray and points
+
+    //first point P1, X
+    float VecMainRayX[] = {VectorDir[0],VectorDir[1]};
+    float P1Ratio = mapS/VecDSize; 
+    //TODO: When one of the vectors is ortogonal, it must be always the largest size possible
+    //or simply larger than the max size of the other vector, which is 64/|d|
+    if(VectorDir[0] != 0){
+        int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
+        P1Ratio = delta_X1/fabs(VectorDir[0]);
+    }
+    VecMainRayX[0] *= P1Ratio;
+    VecMainRayX[1] *= P1Ratio;
+    float VecMainRayXsize = P1Ratio*VecDSize;
+
+    //first point P1, Y
+    float VecMainRayY[] = {VectorDir[0],VectorDir[1]};
+    P1Ratio = mapS/VecDSize; 
+    if(VectorDir[1] != 0){
+        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
+        P1Ratio = delta_Y1/fabs(VectorDir[1]);
+    }
+    VecMainRayY[0] *= P1Ratio;
+    VecMainRayY[1] *= P1Ratio;
+    float VecMainRayYsize = P1Ratio*VecDSize;
+
+    //logic to determine if collision happens in X or Y vector
+    if(VecMainRayXsize < VecMainRayYsize){
+        memcpy(VecMainRay, VecMainRayX, sizeof(VecMainRayX));
+    }else memcpy(VecMainRay, VecMainRayY, sizeof(VecMainRayY));
+}
+
+
 
 void render_2d(DisplaySettings *display){
     SDL_SetRenderDrawColor(display->renderer, 50, 50, 50, 255);
@@ -72,10 +107,13 @@ void render_2d(DisplaySettings *display){
     
     //Main ray and points
     float VecMainRay[] = {VectorDir[0],VectorDir[1]};
+
     /*
     //first point P1, X
     float VecMainRayX[] = {VectorDir[0],VectorDir[1]};
-    float P1Ratio = 0;
+    float P1Ratio = mapS/VecDSize; 
+    //TODO: When one of the vectors is ortogonal, it must be always the largest size possible
+    //or simply larger than the max size of the other vector, which is 64/|d|
     if(VectorDir[0] != 0){
         int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
         P1Ratio = delta_X1/fabs(VectorDir[0]);
@@ -83,11 +121,10 @@ void render_2d(DisplaySettings *display){
     VecMainRayX[0] *= P1Ratio;
     VecMainRayX[1] *= P1Ratio;
     float VecMainRayXsize = P1Ratio*VecDSize;
-    */
 
     //first point P1, Y
     float VecMainRayY[] = {VectorDir[0],VectorDir[1]};
-    float P1Ratio = 0;
+    P1Ratio = mapS/VecDSize; 
     if(VectorDir[1] != 0){
         int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
         P1Ratio = delta_Y1/fabs(VectorDir[1]);
@@ -97,8 +134,12 @@ void render_2d(DisplaySettings *display){
     float VecMainRayYsize = P1Ratio*VecDSize;
 
     //logic to determine if collision happens in X or Y vector
-    VecMainRay[0] = VecMainRayY[0];
-    VecMainRay[1] = VecMainRayY[1];
+    if(VecMainRayXsize < VecMainRayYsize){
+        memcpy(VecMainRay, VecMainRayX, sizeof(VecMainRay));
+    }else memcpy(VecMainRay, VecMainRayY, sizeof(VecMainRay));
+    */
+    castRayP1(VectorDir, VecDSize, VecMainRay);
+
     
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, PlayerObj.x+VecMainRay[0], PlayerObj.y+VecMainRay[1]);
