@@ -50,8 +50,14 @@ void castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
         memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
     }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
 
-
-
+    float OffsetVec[2];
+    OffsetVec[0] = VectorDir[0] > 0? 1 : -1;
+    OffsetVec[1] = VectorDir[1] > 0? 1 : -1;
+    if(IsColliding(CollisionPoint[0] + OffsetVec[0], CollisionPoint[1] + OffsetVec[1])){
+        SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
+        SDL_Rect ColPoint = { CollisionPoint[0] - 4, CollisionPoint[1] - 4, 4, 4};
+        SDL_RenderFillRect(renderer, &ColPoint);
+    }
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.x, PlayerObj.y, CollisionPoint[0], CollisionPoint[1]);
 }
@@ -91,7 +97,7 @@ float castRayFirstLine(float VectorDir[2], float PointP[2]){
     //or simply larger than the max size of the other vector, which is 64/|d|. That's why
     //P1Ratio has this value when VectorDir[1], aka Yd, is 0.
     if(VectorDir[1] != 0){
-        //TODO: bizarre int conversion, may cause innacuracies or bugs
+        //% operator can only be used with ints
         int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
         P1Ratio = delta_Y1/fabs(VectorDir[1]);
     }
