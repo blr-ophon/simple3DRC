@@ -32,7 +32,42 @@ bool IsColliding(int x, int y){
     return mapgrid[y/mapS][x/mapS];
 }
 
-void castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
+void rotate_vector(float Vector[2], bool reverse){
+    //30 degree to each side, 30 vectors each side. 
+    //Angle offset will be (PI/6)/30) = PI/120
+    float temp[] = {Vector[0], Vector[1]};
+    float orientation = reverse? -1 : 1;
+    Vector[0] = cos(PI/180)*temp[0] - orientation*sin(PI/180)*temp[1];
+    Vector[1] = orientation*sin(PI/180)*temp[0] + cos(PI/180)*temp[1];
+}
+
+void castRays(SDL_Renderer *renderer, float VectorDir[2]){
+    //cast main ray
+    //cast n rays from d and c vectors, for positive c, then negative c
+    /*
+    float VectorC[] = {VectorDir[1], 0 -VectorDir[0]};
+    float testVec[] = {0, 0};
+    float C_factor = DIR_VEC_SIZE;
+    testVec[0] += VectorDir[0] + C_factor*VectorC[0];
+    testVec[1] += VectorDir[1] + C_factor*VectorC[1];
+    */
+    castRayToCollision(renderer, VectorDir);
+    float rayDir[] = {VectorDir[0], VectorDir[1]};
+    for(int i = 0; i < 30; i++){ //generate 30 rays to one side
+        rotate_vector(rayDir, 0);
+        castRayToCollision(renderer, rayDir);
+    }
+
+    //return to normal position
+    rayDir[0] = VectorDir[0];
+    rayDir[1] = VectorDir[1];
+    for(int i = 0; i < 30; i++){ //more 30 rays to the other side
+        rotate_vector(rayDir, 1);
+        castRayToCollision(renderer, rayDir);
+    }
+}
+
+float castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     float CollisionPoint[2];
     float RayVecLines[2] = {PlayerObj.x, PlayerObj.y};
     float RayVecCollums[2] = {PlayerObj.x, PlayerObj.y};
@@ -66,6 +101,7 @@ void castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     SDL_RenderFillRect(renderer, &ColPoint);
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.x, PlayerObj.y, CollisionPoint[0], CollisionPoint[1]);
+    return sizeVL < sizeVC ? sizeVL : sizeVC;
 }
 
 
@@ -95,7 +131,8 @@ float castRayNextLine(float VectorDir[2], float PointP[2]){
 }
 
 //castRayFirst functions: Using a position P(x,y), which is expected to be a copy
-//of Player position, then cast this point to the closest line/collum dir vector encounters
+//of Player position, then cast this point to the closest line/collum dir vector encounters.
+//Returns the offset size, which is also the total size in this case.
 float castRayFirstLine(float VectorDir[2], float PointP[2]){
     float OffsetVec[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = mapS/DIR_VEC_SIZE; 
@@ -171,7 +208,7 @@ void render_2d(DisplaySettings *display){
     float VectorDir[] = {point_E[0]-PlayerObj.x, point_E[1]-PlayerObj.y};
 
     //Ray and Collision points
-    castRayToCollision(display->renderer, VectorDir);
+    castRays(display->renderer, VectorDir);
     SDL_RenderPresent(display->renderer);
 }
 

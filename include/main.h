@@ -24,6 +24,8 @@ typedef struct game_object{
 
 bool IsColliding(int x, int y);
 
+float castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]);
+
 float castRayNextCollum(float VectorDir[2], float PointP[2]);
 
 float castRayNextLine(float VectorDir[2], float PointP[2]);
