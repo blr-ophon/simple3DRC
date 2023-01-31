@@ -24,6 +24,10 @@ typedef struct game_object{
 
 bool IsColliding(int x, int y);
 
+float castRayNextCollum(float VectorDir[2], float PointP[2]);
+
+float castRayNextLine(float VectorDir[2], float PointP[2]);
+
 float castRayFirstCollum(float VectorDir[2], float PointP[2]);
 
 float castRayFirstLine(float VectorDir[2], float PointP[2]);

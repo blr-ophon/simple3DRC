@@ -10,7 +10,7 @@ GameObject PlayerObj = {
     0,      //x_speed
     0,      //y_speed
     8,      //size
-    0,      //angle
+    2,      //angle
     0       //turn_speed
 };
 
@@ -43,26 +43,42 @@ void castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     if(sizeVL < sizeVC){
         memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
     }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+
+    sizeVL += castRayNextLine(VectorDir, RayVecLines);
+    sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
+    if(sizeVL < sizeVC){
+        memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
+    }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+
+
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.x, PlayerObj.y, CollisionPoint[0], CollisionPoint[1]);
 }
 
 
-//castRayNext functions: Using a position P(x,y), which is expected to be a copy
-//of Player position, then cast this point to the next line/collum dir vector encounters
+//castRayNext functions: Gets a position P(x,y), which is expected to be the point of previous
+//line/collum encounter, and updates it to the next line/collum, returning the offset size
 float castRayNextCollum(float VectorDir[2], float PointP[2]){
-    PointP[0] += mapS; 
-    PointP[1] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+    float nextP[2];
+    //TODO: test case when VectorDir[0] == 0
+    int orientation = VectorDir[0] > 0? 1 : -1;
+    nextP[0] = PointP[0] + mapS*orientation; 
+    nextP[1] = PointP[1] + mapS*(VectorDir[1]/VectorDir[0])*orientation; //mapS * vector tangent
     //Vector size by Pythagoras
-    float size = sqrt(pow(PointP[0], 2)+pow(PointP[1], 2));                                           
+    float size = sqrt(pow(nextP[0] - PointP[0], 2)+pow(nextP[1] - PointP[1], 2));                                           
+    memcpy(PointP, nextP, sizeof(nextP));
     return size;
 }
 
 float castRayNextLine(float VectorDir[2], float PointP[2]){
-    PointP[1] += mapS; 
-    PointP[0] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+    float nextP[2];
+    int orientation = VectorDir[1] > 0? 1 : -1;
+    nextP[1] = PointP[1] + mapS*orientation; 
+    nextP[0] = PointP[0] + mapS*(VectorDir[0]/VectorDir[1])*orientation; //mapS * 1/(vector tangent)
     //Vector size by Pythagoras
-    float size = sqrt(pow(PointP[0], 2)+pow(PointP[1], 2));                                           
+    float size = sqrt(pow(nextP[0] - PointP[0], 2)+pow(nextP[1] - PointP[1], 2));                                           
+    memcpy(PointP, nextP, sizeof(nextP));
     return size;
 }
 
