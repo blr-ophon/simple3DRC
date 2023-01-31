@@ -32,42 +32,50 @@ bool IsColliding(int x, int y){
     return mapgrid[y/mapS][x/mapS];
 }
 
-void castRayToCollision(float VectorDir[2]){
+void castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     float CollisionPoint[2];
-    float RayVecLines[2];
-    float RayVecCollums[2];
+    float RayVecLines[2] = {PlayerObj.x, PlayerObj.y};
+    float RayVecCollums[2] = {PlayerObj.x, PlayerObj.y};
 
-    //initial values
+    //Update RayVecLines/Collums to first encounters
     float sizeVL = castRayFirstLine(VectorDir, RayVecLines);
     float sizeVC = castRayFirstCollum(VectorDir, RayVecCollums);
     if(sizeVL < sizeVC){
         memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
     }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
-    //TODO: draw collision point
+    SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
+    SDL_RenderDrawLine(renderer, PlayerObj.x, PlayerObj.y, CollisionPoint[0], CollisionPoint[1]);
 }
 
 
-float castRayNextCollum(float VectorDir[2], float VecMainRay[2]){
-    VecMainRay[0] += mapS; 
-    VecMainRay[1] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+//castRayNext functions: Using a position P(x,y), which is expected to be a copy
+//of Player position, then cast this point to the next line/collum dir vector encounters
+float castRayNextCollum(float VectorDir[2], float PointP[2]){
+    PointP[0] += mapS; 
+    PointP[1] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
     //Vector size by Pythagoras
-    float size = sqrt(pow(VecMainRay[0], 2)+pow(VecMainRay[1], 2));                                           
+    float size = sqrt(pow(PointP[0], 2)+pow(PointP[1], 2));                                           
     return size;
 }
 
-float castRayNextLine(float VectorDir[2], float VecMainRay[2]){
-    VecMainRay[1] += mapS; 
-    VecMainRay[0] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+float castRayNextLine(float VectorDir[2], float PointP[2]){
+    PointP[1] += mapS; 
+    PointP[0] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
     //Vector size by Pythagoras
-    float size = sqrt(pow(VecMainRay[0], 2)+pow(VecMainRay[1], 2));                                           
+    float size = sqrt(pow(PointP[0], 2)+pow(PointP[1], 2));                                           
     return size;
 }
 
+//castRayFirst functions: Using a position P(x,y), which is expected to be a copy
+//of Player position, then cast this point to the closest line/collum dir vector encounters
 float castRayFirstLine(float VectorDir[2], float PointP[2]){
-    //first point P1, Y
     float OffsetVec[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = mapS/DIR_VEC_SIZE; 
+    //When one of the vectors is ortogonal, it must be always the largest size possible
+    //or simply larger than the max size of the other vector, which is 64/|d|. That's why
+    //P1Ratio has this value when VectorDir[1], aka Yd, is 0.
     if(VectorDir[1] != 0){
+        //TODO: bizarre int conversion, may cause innacuracies or bugs
         int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
         P1Ratio = delta_Y1/fabs(VectorDir[1]);
     }
@@ -81,12 +89,8 @@ float castRayFirstLine(float VectorDir[2], float PointP[2]){
 }
 
 float castRayFirstCollum(float VectorDir[2], float PointP[2]){
-    //TODO: maybe switch X and Y to vertical and horizontal
-    //first point P1, X
     float OffsetVec[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = mapS/DIR_VEC_SIZE; 
-    //When one of the vectors is ortogonal, it must be always the largest size possible
-    //or simply larger than the max size of the other vector, which is 64/|d|
     if(VectorDir[0] != 0){
         int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
         P1Ratio = delta_X1/fabs(VectorDir[0]);
@@ -135,12 +139,11 @@ void render_2d(DisplaySettings *display){
     SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, point_E[0], point_E[1]);
 
-    //vector d
+    //Vector d
     float VectorDir[] = {point_E[0]-PlayerObj.x, point_E[1]-PlayerObj.y};
-    float CollisionTestPoint[] = {PlayerObj.x, PlayerObj.y};
-    castRayFirstCollum(VectorDir, CollisionTestPoint);
-    SDL_SetRenderDrawColor(display->renderer, 0, 0, 155, 255);
-    SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, CollisionTestPoint[0], CollisionTestPoint[1]);
+
+    //Ray and Collision points
+    castRayToCollision(display->renderer, VectorDir);
     SDL_RenderPresent(display->renderer);
 }
 

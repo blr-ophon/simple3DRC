@@ -24,9 +24,9 @@ typedef struct game_object{
 
 bool IsColliding(int x, int y);
 
-float castRayFirstCollum(float VectorDir[2], float VecMainRay[2]);
+float castRayFirstCollum(float VectorDir[2], float PointP[2]);
 
-float castRayFirstLine(float VectorDir[2], float VecMainRay[2]);
+float castRayFirstLine(float VectorDir[2], float PointP[2]);
 
 void process_input(void);
 
