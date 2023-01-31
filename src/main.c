@@ -56,7 +56,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
         FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
         RayDist *= FisheyeFactor;
 
-        float lineH = (mapS*320)/RayDist; if(lineH > 320) (lineH = 320);
+        float lineH = (mapS*320)/RayDist; 
         float lineO = 160-lineH/2;
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};  //8 because 512/60
         DrawCollum3D += 8;
@@ -76,7 +76,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
         FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
         RayDist *= FisheyeFactor;
 
-        float lineH = (mapS*320)/RayDist; if(lineH > 320) (lineH = 320);
+        float lineH = (mapS*320)/RayDist; 
         float lineO = 160-lineH/2;
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};
         DrawCollum3D -= 8;
