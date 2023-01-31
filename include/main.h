@@ -22,9 +22,14 @@ typedef struct game_object{
     float turn_speed;
 }GameObject;
 
+typedef struct ray_object{
+    float size;
+    bool horizontal;
+}RayObj;
+
 bool IsColliding(int x, int y);
 
-float castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]);
+RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]);
 
 float castRayNextCollum(float VectorDir[2], float PointP[2]);
 

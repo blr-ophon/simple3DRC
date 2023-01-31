@@ -49,7 +49,8 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     float rayDir[] = {VectorDir[0], VectorDir[1]};
     for(int i = 0; i < 30; i++){ //generate 30 rays to one side (right)
         rotate_vector(rayDir, 0);
-        float RayDist = castRayToCollision(renderer, rayDir);
+        RayObj castedRay = castRayToCollision(renderer, rayDir);
+        float RayDist = castedRay.size;
 
         //cos(a) = (v*i)/(|v|*|i|)
         float FisheyeFactor = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
@@ -58,6 +59,9 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
 
         float lineH = (mapS*320)/RayDist; 
         float lineO = 160-lineH/2;
+
+        SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
+        if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};  //8 because 512/60
         DrawCollum3D += 8;
         SDL_RenderFillRect(renderer, &GameCollumRender);
@@ -69,8 +73,8 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     DrawCollum3D = 512 + 256;
     for(int i = 0; i < 30; i++){ //more 30 rays to the other side
         rotate_vector(rayDir, 1);
-        float RayDist = castRayToCollision(renderer, rayDir);
-
+        RayObj castedRay = castRayToCollision(renderer, rayDir);
+        float RayDist = castedRay.size;
         //cos(a) = (v*i)/(|v|*|i|)
         float FisheyeFactor = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
         FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
@@ -78,13 +82,16 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
 
         float lineH = (mapS*320)/RayDist; 
         float lineO = 160-lineH/2;
+
+        SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
+        if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};
         DrawCollum3D -= 8;
         SDL_RenderFillRect(renderer, &GameCollumRender);
     }
 }
 
-float castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
+RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     float CollisionPoint[2];
     float RayVecLines[2] = {PlayerObj.x, PlayerObj.y};
     float RayVecCollums[2] = {PlayerObj.x, PlayerObj.y};
@@ -112,13 +119,23 @@ float castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
             memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
         }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
     }
+
+    RayObj castedRay;
+    if(sizeVL < sizeVC){
+        castedRay.size = sizeVL;
+        castedRay.horizontal = 0;
+    }else{
+        castedRay.size = sizeVC;
+        castedRay.horizontal = 1;
+    }
     
-    SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
+    SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
+    if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
     SDL_Rect ColPoint = { CollisionPoint[0], CollisionPoint[1], 4, 4};
     SDL_RenderFillRect(renderer, &ColPoint);
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.x, PlayerObj.y, CollisionPoint[0], CollisionPoint[1]);
-    return sizeVL < sizeVC ? sizeVL : sizeVC;
+    return castedRay;
 }
 
 
