@@ -44,7 +44,7 @@ void rotate_vector(float Vector[2], bool reverse){
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     int DrawCollum3D = 512 + 256;
-    float CastedVDirSize = castRayToCollision(renderer, VectorDir);
+    castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
     for(int i = 0; i < 30; i++){ //generate 30 rays to one side (right)
