@@ -32,38 +32,72 @@ bool IsColliding(int x, int y){
     return mapgrid[y/mapS][x/mapS];
 }
 
-void castRayP1(float VectorDir[2], float VecDSize, float VecMainRay[2]){
-    //TODO: maybe switch X and Y to vertical and horizontal
-    //Main ray and points
+void castRayToCollision(float VectorDir[2]){
+    float CollisionPoint[2];
+    float RayVecLines[2];
+    float RayVecCollums[2];
 
+    //initial values
+    float sizeVL = castRayFirstLine(VectorDir, RayVecLines);
+    float sizeVC = castRayFirstCollum(VectorDir, RayVecCollums);
+    if(sizeVL < sizeVC){
+        memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
+    }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+    //TODO: draw collision point
+}
+
+
+float castRayNextCollum(float VectorDir[2], float VecMainRay[2]){
+    VecMainRay[0] += mapS; 
+    VecMainRay[1] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+    //Vector size by Pythagoras
+    float size = sqrt(pow(VecMainRay[0], 2)+pow(VecMainRay[1], 2));                                           
+    return size;
+}
+
+float castRayNextLine(float VectorDir[2], float VecMainRay[2]){
+    VecMainRay[1] += mapS; 
+    VecMainRay[0] += mapS*(VectorDir[1]/VectorDir[0]); //mapS * vector tangent
+    //Vector size by Pythagoras
+    float size = sqrt(pow(VecMainRay[0], 2)+pow(VecMainRay[1], 2));                                           
+    return size;
+}
+
+float castRayFirstLine(float VectorDir[2], float PointP[2]){
+    //first point P1, Y
+    float OffsetVec[] = {VectorDir[0],VectorDir[1]};
+    float P1Ratio = mapS/DIR_VEC_SIZE; 
+    if(VectorDir[1] != 0){
+        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
+        P1Ratio = delta_Y1/fabs(VectorDir[1]);
+    }
+    OffsetVec[0] *= P1Ratio;
+    OffsetVec[1] *= P1Ratio;
+    PointP[0] += OffsetVec[0];
+    PointP[1] += OffsetVec[1];
+
+    float size = P1Ratio*DIR_VEC_SIZE;
+    return size;
+}
+
+float castRayFirstCollum(float VectorDir[2], float PointP[2]){
+    //TODO: maybe switch X and Y to vertical and horizontal
     //first point P1, X
-    float VecMainRayX[] = {VectorDir[0],VectorDir[1]};
-    float P1Ratio = mapS/VecDSize; 
-    //TODO: When one of the vectors is ortogonal, it must be always the largest size possible
+    float OffsetVec[] = {VectorDir[0],VectorDir[1]};
+    float P1Ratio = mapS/DIR_VEC_SIZE; 
+    //When one of the vectors is ortogonal, it must be always the largest size possible
     //or simply larger than the max size of the other vector, which is 64/|d|
     if(VectorDir[0] != 0){
         int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
         P1Ratio = delta_X1/fabs(VectorDir[0]);
     }
-    VecMainRayX[0] *= P1Ratio;
-    VecMainRayX[1] *= P1Ratio;
-    float VecMainRayXsize = P1Ratio*VecDSize;
+    OffsetVec[0] *= P1Ratio;
+    OffsetVec[1] *= P1Ratio;
+    PointP[0] += OffsetVec[0];
+    PointP[1] += OffsetVec[1];
 
-    //first point P1, Y
-    float VecMainRayY[] = {VectorDir[0],VectorDir[1]};
-    P1Ratio = mapS/VecDSize; 
-    if(VectorDir[1] != 0){
-        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
-        P1Ratio = delta_Y1/fabs(VectorDir[1]);
-    }
-    VecMainRayY[0] *= P1Ratio;
-    VecMainRayY[1] *= P1Ratio;
-    float VecMainRayYsize = P1Ratio*VecDSize;
-
-    //logic to determine if collision happens in X or Y vector
-    if(VecMainRayXsize < VecMainRayYsize){
-        memcpy(VecMainRay, VecMainRayX, sizeof(VecMainRayX));
-    }else memcpy(VecMainRay, VecMainRayY, sizeof(VecMainRayY));
+    float size = P1Ratio*DIR_VEC_SIZE;
+    return size;
 }
 
 
@@ -96,53 +130,17 @@ void render_2d(DisplaySettings *display){
 
     //view direction
     float point_E[2];
-    float VecDSize = 30;
-    point_E[0] = PlayerObj.x + VecDSize*cos(PlayerObj.angle);
-    point_E[1] = PlayerObj.y + VecDSize*sin(PlayerObj.angle);
+    point_E[0] = PlayerObj.x + DIR_VEC_SIZE*cos(PlayerObj.angle);
+    point_E[1] = PlayerObj.y + DIR_VEC_SIZE*sin(PlayerObj.angle);
     SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, point_E[0], point_E[1]);
 
     //vector d
     float VectorDir[] = {point_E[0]-PlayerObj.x, point_E[1]-PlayerObj.y};
-    
-    //Main ray and points
-    float VecMainRay[] = {VectorDir[0],VectorDir[1]};
-
-    /*
-    //first point P1, X
-    float VecMainRayX[] = {VectorDir[0],VectorDir[1]};
-    float P1Ratio = mapS/VecDSize; 
-    //TODO: When one of the vectors is ortogonal, it must be always the largest size possible
-    //or simply larger than the max size of the other vector, which is 64/|d|
-    if(VectorDir[0] != 0){
-        int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.x)%mapS) : ((int)PlayerObj.x)%mapS;
-        P1Ratio = delta_X1/fabs(VectorDir[0]);
-    }
-    VecMainRayX[0] *= P1Ratio;
-    VecMainRayX[1] *= P1Ratio;
-    float VecMainRayXsize = P1Ratio*VecDSize;
-
-    //first point P1, Y
-    float VecMainRayY[] = {VectorDir[0],VectorDir[1]};
-    P1Ratio = mapS/VecDSize; 
-    if(VectorDir[1] != 0){
-        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.y)%mapS) : ((int)PlayerObj.y)%mapS;
-        P1Ratio = delta_Y1/fabs(VectorDir[1]);
-    }
-    VecMainRayY[0] *= P1Ratio;
-    VecMainRayY[1] *= P1Ratio;
-    float VecMainRayYsize = P1Ratio*VecDSize;
-
-    //logic to determine if collision happens in X or Y vector
-    if(VecMainRayXsize < VecMainRayYsize){
-        memcpy(VecMainRay, VecMainRayX, sizeof(VecMainRay));
-    }else memcpy(VecMainRay, VecMainRayY, sizeof(VecMainRay));
-    */
-    castRayP1(VectorDir, VecDSize, VecMainRay);
-
-    
+    float CollisionTestPoint[] = {PlayerObj.x, PlayerObj.y};
+    castRayFirstCollum(VectorDir, CollisionTestPoint);
     SDL_SetRenderDrawColor(display->renderer, 0, 0, 155, 255);
-    SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, PlayerObj.x+VecMainRay[0], PlayerObj.y+VecMainRay[1]);
+    SDL_RenderDrawLine(display->renderer, PlayerObj.x, PlayerObj.y, CollisionTestPoint[0], CollisionTestPoint[1]);
     SDL_RenderPresent(display->renderer);
 }
 
