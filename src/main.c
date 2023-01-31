@@ -5,8 +5,8 @@
 
 bool running = true;
 GameObject PlayerObj = {
-    100,    //x
-    300,    //y
+    1,    //x
+    1,    //y
     0,      //x_speed
     0,      //y_speed
     8,      //size
@@ -16,12 +16,13 @@ GameObject PlayerObj = {
 
 int last_frame_time = 0;
 
+//8x8 with each tile sizing 64
 int mapX = 8, mapY = 8, mapS = 64;
 int mapgrid[][8] = {
-    {1,1,1,1,1,1,1,1},
+    {0,0,1,1,1,1,1,1},
     {1,0,0,0,1,1,1,1},
     {1,0,1,0,1,0,0,1},
-    {1,0,1,0,1,0,0,1},
+    {1,0,0,0,1,0,0,1},
     {1,0,0,0,1,0,1,1},
     {1,0,0,0,0,0,1,1},
     {1,0,1,1,1,0,1,1},
@@ -38,8 +39,8 @@ void rotate_vector(float Vector[2], bool reverse){
     //TODO: Angle as a constant
     float temp[] = {Vector[0], Vector[1]};
     float orientation = reverse? -1 : 1;
-    Vector[0] = cos(PI/180)*temp[0] - orientation*sin(PI/180)*temp[1];
-    Vector[1] = orientation*sin(PI/180)*temp[0] + cos(PI/180)*temp[1];
+    Vector[0] = cos(ROTATE_ANGLE)*temp[0] - orientation*sin(ROTATE_ANGLE)*temp[1];
+    Vector[1] = orientation*sin(ROTATE_ANGLE)*temp[0] + cos(ROTATE_ANGLE)*temp[1];
 }
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2]){
@@ -47,7 +48,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
-    for(int i = 0; i < 30; i++){ //generate 30 rays to one side (right)
+    for(int i = 0; i <= RAY_NUMBER/2; i++){ //generate 30 rays to one side (right)
         rotate_vector(rayDir, 0);
         RayObj castedRay = castRayToCollision(renderer, rayDir);
         float RayDist = castedRay.size;
@@ -63,18 +64,19 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
         SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
         if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};  //8 because 512/60
-        DrawCollum3D += 8;
+        DrawCollum3D += CAST_3D_OFFSET;
         SDL_RenderFillRect(renderer, &GameCollumRender);
     }
 
     //return to normal position
     rayDir[0] = VectorDir[0];
     rayDir[1] = VectorDir[1];
-    DrawCollum3D = 512 + 256;
-    for(int i = 0; i < 30; i++){ //more 30 rays to the other side
+    DrawCollum3D = 512 + 256 - CAST_3D_OFFSET;
+    for(int i = 0; i < RAY_NUMBER/2; i++){ //more 30 rays to the other side
         rotate_vector(rayDir, 1);
         RayObj castedRay = castRayToCollision(renderer, rayDir);
         float RayDist = castedRay.size;
+
         //cos(a) = (v*i)/(|v|*|i|)
         float FisheyeFactor = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
         FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
@@ -86,7 +88,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
         SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
         if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
         SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};
-        DrawCollum3D -= 8;
+        DrawCollum3D -= CAST_3D_OFFSET;
         SDL_RenderFillRect(renderer, &GameCollumRender);
     }
 }
@@ -104,11 +106,20 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
 
     //Offset Collision detection
+    //TODO: COllision detection with glitches for VectorDir[0] < 0
+    //and VectorDir[1] < 0
     float OffsetVec[2];
-    OffsetVec[0] = VectorDir[0] > 0? 1 : -1;
-    OffsetVec[1] = VectorDir[1] > 0? 1 : -1;
+    OffsetVec[0] = VectorDir[0] > 0? 0 : -0.5;
+    OffsetVec[1] = VectorDir[1] > 0? 0 : -0.5;
 
     while(!(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1]+OffsetVec[1]))){
+//    while(!(IsColliding(CollisionPoint[0], CollisionPoint[1]))){
+      if(CollisionPoint[0] <= 0 || CollisionPoint[0] >= 1024){
+          sizeVL = 0; break;
+      }
+      if(CollisionPoint[1] <= 0 || CollisionPoint[0] >= 512){
+          sizeVC = 0; break;
+      }
         if(sizeVL < sizeVC){ //update values
             sizeVL += castRayNextLine(VectorDir, RayVecLines);
         }else{
@@ -210,8 +221,8 @@ void render_2d(DisplaySettings *display){
     SDL_RenderClear(display->renderer);
 
     //grid
-    for(int i = 0; i < 8; i++){
-        for(int j = 0; j < 8; j++){
+    for(int i = 0; i < mapY; i++){
+        for(int j = 0; j < mapX; j++){
             SDL_Rect GameWalls = {i*mapS, j*mapS, mapS-1, mapS-1};
             SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
             if(mapgrid[j][i]){
@@ -256,8 +267,10 @@ void update(void){
     //TODO: Implement movement as delta time function
     //(x,y) movement
     if(!IsColliding(PlayerObj.x + PlayerObj.x_speed, PlayerObj.y + PlayerObj.y_speed)){
-        PlayerObj.x += PlayerObj.x_speed;
-        PlayerObj.y += PlayerObj.y_speed;
+        float newX = PlayerObj.x + PlayerObj.x_speed;
+        if(newX > 0 && newX < 1024) PlayerObj.x = newX;
+        float newY = PlayerObj.y + PlayerObj.y_speed;
+        if(newY > 0 && newY < 512) PlayerObj.y = newY;
     }
     //view direction movement
     PlayerObj.angle += PlayerObj.turn_speed; 
