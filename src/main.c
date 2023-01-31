@@ -35,6 +35,7 @@ bool IsColliding(int x, int y){
 void rotate_vector(float Vector[2], bool reverse){
     //30 degree to each side, 30 vectors each side. 
     //Angle offset will be (PI/6)/30) = PI/120
+    //TODO: Angle as a constant
     float temp[] = {Vector[0], Vector[1]};
     float orientation = reverse? -1 : 1;
     Vector[0] = cos(PI/180)*temp[0] - orientation*sin(PI/180)*temp[1];
@@ -42,28 +43,44 @@ void rotate_vector(float Vector[2], bool reverse){
 }
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2]){
-    //cast main ray
-    //cast n rays from d and c vectors, for positive c, then negative c
-    /*
-    float VectorC[] = {VectorDir[1], 0 -VectorDir[0]};
-    float testVec[] = {0, 0};
-    float C_factor = DIR_VEC_SIZE;
-    testVec[0] += VectorDir[0] + C_factor*VectorC[0];
-    testVec[1] += VectorDir[1] + C_factor*VectorC[1];
-    */
-    castRayToCollision(renderer, VectorDir);
+    int DrawCollum3D = 512 + 256;
+    float CastedVDirSize = castRayToCollision(renderer, VectorDir);
+
     float rayDir[] = {VectorDir[0], VectorDir[1]};
-    for(int i = 0; i < 30; i++){ //generate 30 rays to one side
+    for(int i = 0; i < 30; i++){ //generate 30 rays to one side (right)
         rotate_vector(rayDir, 0);
-        castRayToCollision(renderer, rayDir);
+        float RayDist = castRayToCollision(renderer, rayDir);
+
+        //cos(a) = (v*i)/(|v|*|i|)
+        float FisheyeFactor = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
+        FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
+        RayDist *= FisheyeFactor;
+
+        float lineH = (mapS*320)/RayDist; if(lineH > 320) (lineH = 320);
+        float lineO = 160-lineH/2;
+        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};  //8 because 512/60
+        DrawCollum3D += 8;
+        SDL_RenderFillRect(renderer, &GameCollumRender);
     }
 
     //return to normal position
     rayDir[0] = VectorDir[0];
     rayDir[1] = VectorDir[1];
+    DrawCollum3D = 512 + 256;
     for(int i = 0; i < 30; i++){ //more 30 rays to the other side
         rotate_vector(rayDir, 1);
-        castRayToCollision(renderer, rayDir);
+        float RayDist = castRayToCollision(renderer, rayDir);
+
+        //cos(a) = (v*i)/(|v|*|i|)
+        float FisheyeFactor = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
+        FisheyeFactor /= DIR_VEC_SIZE*DIR_VEC_SIZE;
+        RayDist *= FisheyeFactor;
+
+        float lineH = (mapS*320)/RayDist; if(lineH > 320) (lineH = 320);
+        float lineO = 160-lineH/2;
+        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};
+        DrawCollum3D -= 8;
+        SDL_RenderFillRect(renderer, &GameCollumRender);
     }
 }
 
