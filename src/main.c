@@ -3,30 +3,41 @@
 #include <assert.h>
 #include <math.h>
 
+//TODO: Problem with casted rays at y < 32 positions, when looking down
+//TODO: Lines with wrong color still
+
 bool running = true;
+int last_frame_time = 0;
+
+//8x8 with each tile sizing 64
+int mapX = 16, mapY = 16, mapS = 32;
+int mapgrid[][16] = {
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+    {1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1},
+    {1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1},
+    {1,0,0,0,1,1,1,1,0,1,0,0,0,0,0,1},
+    {1,0,1,1,1,0,1,1,0,1,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1},
+    {1,0,1,0,1,0,1,0,0,0,0,1,0,0,0,1},
+    {1,1,1,0,1,1,1,1,1,0,0,0,1,0,0,1},
+    {1,1,0,0,0,0,0,0,1,0,0,1,0,0,0,1},
+    {1,0,0,0,1,1,1,0,0,0,0,0,1,0,0,1},
+    {1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1},
+    {1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,1},
+    {1,0,0,0,1,0,1,1,0,0,0,0,0,0,0,1},
+    {1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1},
+    {1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1},
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+};
+
 GameObject PlayerObj = {
-    90,    //x
-    30,    //y
+    64,    //x
+    64,    //y
     0,      //x_speed
     0,      //y_speed
     8,      //size
     2,      //angle
     0       //turn_speed
-};
-
-int last_frame_time = 0;
-
-//8x8 with each tile sizing 64
-int mapX = 8, mapY = 8, mapS = 64;
-int mapgrid[][8] = {
-    {0,0,1,1,1,1,1,1},
-    {1,0,0,0,1,1,1,1},
-    {1,0,1,0,1,0,0,1},
-    {1,0,0,0,1,0,0,1},
-    {1,0,0,0,1,0,1,1},
-    {1,0,0,0,0,0,1,1},
-    {1,0,1,1,1,0,1,1},
-    {1,1,1,1,1,1,1,1}
 };
 
 bool IsColliding(int x, int y){
@@ -113,25 +124,31 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     OffsetVec[0] = VectorDir[0] > 0? 0 : -0.5;
     OffsetVec[1] = VectorDir[1] > 0? 0 : -0.5;
 
-    //while(!(IsColliding(CollisionPoint[0], CollisionPoint[1]+OffsetVec[1]))
-    //        && !(IsColliding(CollisionPoint[0] + OffsetVec[0], CollisionPoint[1]))){
     while(!(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1]+OffsetVec[1]))){
-//    while(!(IsColliding(CollisionPoint[0], CollisionPoint[1]))){
-      if(CollisionPoint[0] <= 0 || CollisionPoint[0] >= 1024){
+        //If CollisionPoint goes beyond boundaries, give it size 0 so it wont be drawn in 3d
+        //TODO: This makes these rays invisible in 3d, and also lets the computer calculate Collision
+        //points way beyond the boundaries before, wasting time. So this should be checked while
+        //calculating collision point.
+        if(CollisionPoint[0] <= 0 || CollisionPoint[0] >= 1024){
           sizeVL = 0; break;
-      }
-      if(CollisionPoint[1] <= 0 || CollisionPoint[0] >= 512){
+        }
+        if(CollisionPoint[1] <= 0 || CollisionPoint[0] >= 512){
           sizeVC = 0; break;
-      }
+        }
+
         if(sizeVL < sizeVC){ //update values
-            sizeVL += castRayNextLine(VectorDir, RayVecLines);
+        sizeVL += castRayNextLine(VectorDir, RayVecLines);
         }else{
-            sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
+        //TODO: this is the case when collision is beyond boundaries and sizeVL = sizeVC
+        //fix this
+        sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
         }
 
         if(sizeVL < sizeVC){ //CollisionPoint is the smallest after update
             memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
-        }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+        }else {
+            memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+        }
     }
 
     RayObj castedRay;
