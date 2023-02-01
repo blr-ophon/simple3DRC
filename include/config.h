@@ -3,7 +3,7 @@
 #define PLAYER_SPEED 5
 #define TURN_SPEED 0.08
 #define PI 3.14159265359
-#define RAY_NUMBER 121.0                 //must be odd to have simetry
+#define RAY_NUMBER 121                 //must be odd to have simetry
 #define FOV_ANGLE PI/3.0
 #define DIR_VEC_SIZE 20.00
 #define ROTATE_ANGLE FOV_ANGLE/(RAY_NUMBER)

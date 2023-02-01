@@ -5,8 +5,8 @@
 
 bool running = true;
 GameObject PlayerObj = {
-    1,    //x
-    1,    //y
+    90,    //x
+    30,    //y
     0,      //x_speed
     0,      //y_speed
     8,      //size
@@ -48,8 +48,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
-    for(int i = 0; i <= RAY_NUMBER/2; i++){ //generate 30 rays to one side (right)
-        rotate_vector(rayDir, 0);
+    for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
         RayObj castedRay = castRayToCollision(renderer, rayDir);
         float RayDist = castedRay.size;
 
@@ -63,17 +62,18 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
 
         SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
         if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
-        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};  //8 because 512/60
+        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, CAST_3D_OFFSET, lineH};
         DrawCollum3D += CAST_3D_OFFSET;
         SDL_RenderFillRect(renderer, &GameCollumRender);
+        rotate_vector(rayDir, 0);
     }
 
     //return to normal position
     rayDir[0] = VectorDir[0];
     rayDir[1] = VectorDir[1];
+    rotate_vector(rayDir, 1);
     DrawCollum3D = 512 + 256 - CAST_3D_OFFSET;
-    for(int i = 0; i < RAY_NUMBER/2; i++){ //more 30 rays to the other side
-        rotate_vector(rayDir, 1);
+    for(int i = 1; i < (RAY_NUMBER-1)/2; i++){ //more 30 rays to the other side
         RayObj castedRay = castRayToCollision(renderer, rayDir);
         float RayDist = castedRay.size;
 
@@ -87,9 +87,10 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
 
         SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
         if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
-        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, 8, lineH};
+        SDL_Rect GameCollumRender = {DrawCollum3D, lineO, CAST_3D_OFFSET, lineH};
         DrawCollum3D -= CAST_3D_OFFSET;
         SDL_RenderFillRect(renderer, &GameCollumRender);
+        rotate_vector(rayDir, 1);
     }
 }
 
@@ -112,6 +113,8 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     OffsetVec[0] = VectorDir[0] > 0? 0 : -0.5;
     OffsetVec[1] = VectorDir[1] > 0? 0 : -0.5;
 
+    //while(!(IsColliding(CollisionPoint[0], CollisionPoint[1]+OffsetVec[1]))
+    //        && !(IsColliding(CollisionPoint[0] + OffsetVec[0], CollisionPoint[1]))){
     while(!(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1]+OffsetVec[1]))){
 //    while(!(IsColliding(CollisionPoint[0], CollisionPoint[1]))){
       if(CollisionPoint[0] <= 0 || CollisionPoint[0] >= 1024){
