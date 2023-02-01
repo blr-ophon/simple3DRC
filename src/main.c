@@ -5,6 +5,12 @@
 
 //TODO: Problem with casted rays at y < 32 positions, when looking down
 //TODO: Lines with wrong color still
+//TODO: casting of rays from middle to right and than middle to left may
+//be causing screen glitches during movement. A normal left to right might avoid
+//this, reduce code and look better in low speeds for debugging
+//TODO: use first person view for controls. Create a vector speed with same direction
+//as dir, this vector applies movement to Player position while 'w' or 's' is pressed. An
+//orthogonal vector works the same for 'a' and 'd'
 
 bool running = true;
 int last_frame_time = 0;
@@ -110,21 +116,26 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     float RayVecLines[2] = {PlayerObj.x, PlayerObj.y};
     float RayVecCollums[2] = {PlayerObj.x, PlayerObj.y};
 
-    //Update RayVecLines/Collums to first encounters
-    float sizeVL = castRayFirstLine(VectorDir, RayVecLines);
-    float sizeVC = castRayFirstCollum(VectorDir, RayVecCollums);
-    if(sizeVL < sizeVC){
-        memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
-    }else memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
-
     //Offset Collision detection
     //TODO: COllision detection with glitches for VectorDir[0] < 0
     //and VectorDir[1] < 0
     float OffsetVec[2];
-    OffsetVec[0] = VectorDir[0] > 0? 0 : -0.5;
-    OffsetVec[1] = VectorDir[1] > 0? 0 : -0.5;
+    OffsetVec[0] = VectorDir[0] > 0? 0 : -1;
+    OffsetVec[1] = VectorDir[1] > 0? 0 : -1;
 
-    while(!(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1]+OffsetVec[1]))){
+    //Update RayVecLines/Collums to first encounters
+    float sizeVL = castRayFirstLine(VectorDir, RayVecLines);
+    float sizeVC = castRayFirstCollum(VectorDir, RayVecCollums);
+    bool firstGridCollision = 0;
+    if(sizeVL < sizeVC){
+        memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
+        if(IsColliding(CollisionPoint[0], CollisionPoint[1] + OffsetVec[1])) firstGridCollision = 1;
+    }else{
+        memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+        if(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1])) firstGridCollision = 1;
+    }
+
+    while(!firstGridCollision){
         //If CollisionPoint goes beyond boundaries, give it size 0 so it wont be drawn in 3d
         //TODO: This makes these rays invisible in 3d, and also lets the computer calculate Collision
         //points way beyond the boundaries before, wasting time. So this should be checked while
@@ -137,17 +148,17 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
         }
 
         if(sizeVL < sizeVC){ //update values
-        sizeVL += castRayNextLine(VectorDir, RayVecLines);
+            sizeVL += castRayNextLine(VectorDir, RayVecLines);
         }else{
-        //TODO: this is the case when collision is beyond boundaries and sizeVL = sizeVC
-        //fix this
-        sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
+            sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
         }
 
         if(sizeVL < sizeVC){ //CollisionPoint is the smallest after update
             memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
+            if(IsColliding(CollisionPoint[0], CollisionPoint[1] + OffsetVec[1])) break;
         }else {
             memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
+            if(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1])) break;
         }
     }
 
