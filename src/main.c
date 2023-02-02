@@ -4,13 +4,14 @@
 #include <math.h>
 
 //TODO: Problem with casted rays at y < 32 positions, when looking down
-//TODO: Lines with wrong color still
 //TODO: casting of rays from middle to right and than middle to left may
 //be causing screen glitches during movement. A normal left to right might avoid
 //this, reduce code and look better in low speeds for debugging
 //TODO: use first person view for controls. Create a vector speed with same direction
 //as dir, this vector applies movement to Player position while 'w' or 's' is pressed. An
 //orthogonal vector works the same for 'a' and 'd'
+//TODO: mapgrid as array of ints, not array of arrays. Drawed by using mapX and mapY.
+//This will let me load maps from external files
 
 bool running = true;
 int last_frame_time = 0;
@@ -20,18 +21,18 @@ int mapX = 16, mapY = 16, mapS = 32;
 int mapgrid[][16] = {
     {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     {1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1},
-    {1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,1,1,1,1,0,1,0,0,0,0,0,1},
-    {1,0,1,1,1,0,1,1,0,1,0,0,0,0,0,1},
-    {1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,1},
-    {1,0,1,0,1,0,1,0,0,0,0,1,0,0,0,1},
-    {1,1,1,0,1,1,1,1,1,0,0,0,1,0,0,1},
-    {1,1,0,0,0,0,0,0,1,0,0,1,0,0,0,1},
-    {1,0,0,0,1,1,1,0,0,0,0,0,1,0,0,1},
-    {1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,1},
-    {1,0,0,0,1,0,1,1,0,0,0,0,0,0,0,1},
-    {1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1},
+    {1,0,1,0,1,0,0,0,0,1,0,1,1,1,0,1},
+    {1,0,0,0,1,1,1,1,0,1,0,1,0,0,0,1},
+    {1,0,1,1,1,0,1,1,0,1,1,1,1,1,0,1},
+    {1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,1},
+    {1,0,1,0,1,0,1,0,0,1,1,1,0,1,0,1},
+    {1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,1},
+    {1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,1},
+    {1,0,0,0,1,1,1,0,0,0,1,1,0,0,0,1},
+    {1,0,1,0,1,0,0,0,0,0,1,1,0,0,0,1},
+    {1,0,0,0,1,0,0,0,0,1,1,1,1,0,0,1},
+    {1,0,0,0,1,0,1,0,1,1,1,1,1,1,0,1},
+    {1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1},
     {1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1},
     {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
@@ -64,6 +65,11 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2]){
     int DrawCollum3D = 512 + 256;
     castRayToCollision(renderer, VectorDir);
 
+    //TODO: Instead of creating a copy of VectorDir, manipulating it and casting ray, it would
+    //be a more compact code if castRaytoCollision received an angle, made the rotation, used the
+    //new vector as normal and returned the distance to camera plane. Having the angle would remove
+    //the need for a fisheye correction
+    
     float rayDir[] = {VectorDir[0], VectorDir[1]};
     for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
         RayObj castedRay = castRayToCollision(renderer, rayDir);
