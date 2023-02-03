@@ -14,10 +14,8 @@ typedef struct displaySettings{
 }DisplaySettings;
 
 typedef struct game_object{
-    float x;
-    float y;
-    float x_speed;
-    float y_speed;
+    float pos[2];
+    float speed[2];
     float size;
     float angle;
     float turn_speed;
