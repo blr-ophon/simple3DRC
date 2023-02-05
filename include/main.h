@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include "config.h"
+#include "controls.h"
 
 typedef struct displaySettings{
     SDL_Window *window;
@@ -16,7 +17,7 @@ typedef struct displaySettings{
 typedef struct game_object{
     float pos[2];
     float speed[2];
-    float size;
+    float size;         //TODO: No need to have this, only purpose is debug mode. Use a constant
     float angle;
     float turn_speed;
 }GameObject;
@@ -26,7 +27,6 @@ typedef struct ray_object{
     bool horizontal;
 }RayObj;
 
-bool IsColliding(int x, int y);
 
 void RotateVecUnit(float Vector[2], bool reverse);
 

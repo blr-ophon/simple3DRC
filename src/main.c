@@ -7,8 +7,12 @@
 //TODO: use first person view for controls. Create a vector speed with same direction
 //as dir, this vector applies movement to Player position while 'w' or 's' is pressed. An
 //orthogonal vector works the same for 'a' and 'd'
+//TODO: Multiple modes by pressig F1, F2, F3:
+//One mode is the game with textures, the other is game with no textures and the third
+//is game with 2d view.
 
 bool running = true;
+bool DebugMode = false;
 
 //Precalculated values
 float UnitAngleSin; 
@@ -24,12 +28,12 @@ int mapgrid[] = {
     1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,1,
     1,0,1,0,0,1,1,1,0,1,1,1,0,1,0,1,
     1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,1,
-    1,1,0,0,0,0,0,0,0,0,1,1,0,0,0,1,
-    1,0,0,0,1,1,1,0,0,0,1,1,0,0,0,1,
-    1,0,1,0,1,0,0,0,0,0,1,1,0,0,0,1,
-    1,0,0,0,1,0,0,0,0,1,1,1,1,0,0,1,
-    1,0,0,0,1,0,1,0,1,1,1,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,1,0,0,1,0,0,1,
+    1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
+    1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,
+    1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,
+    1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,
+    1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,
     1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0
 };
@@ -41,6 +45,7 @@ GameObject PlayerObj = {
     2,      //angle
     0       //turn_speed
 };
+
 
 bool IsColliding(int x, int y){
     //TODO x/mapS and y/mapS as constants
@@ -57,7 +62,8 @@ void RotateVecUnit(float Vector[2], bool reverse){
 }
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
-    int CollumX = 512 + 256;
+    int CollumX = GAME_X + (WINDOW_WIDTH - GAME_X)/2;
+    int temp = CollumX;
     castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
@@ -67,12 +73,13 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             RayObj castedRay = castRayToCollision(renderer, rayDir);
             float RayDist = castedRay.size;
 
+            //Calculate distance of Collision Point Pc to camera plane c: d(Pc-c) = size*cos(a)
             //cos(a) = (v*i)/(|v|*|i|)
             float ProjectionCos = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
             RayDist *= ProjectionCos;
 
-            float lineH = (mapS*320)/RayDist; 
-            float lineO = 160-lineH/2;
+            float lineH = (mapS*GAME_HEIGHT)/RayDist; if(lineH > GAME_HEIGHT) {lineH = GAME_HEIGHT;}
+            float lineO = GAME_HEIGHT - lineH/2;
 
             SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
             if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
@@ -85,7 +92,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
         rayDir[0] = VectorDir[0];
         rayDir[1] = VectorDir[1];
         RotateVecUnit(rayDir, 1);
-        CollumX = 512 + 256 - CAST_3D_OFFSET;
+        CollumX = temp - CAST_3D_OFFSET;
         reverseOrientation = 1;
     }
 }
@@ -131,12 +138,14 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     castedRay.horizontal = sizeVL < sizeVC? 0 : 1;
     
     //TODO: Make this optional for a debug mode
+    /*
     SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
     if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
     SDL_Rect ColPoint = { CollisionPoint[0], CollisionPoint[1], 4, 4};
     SDL_RenderFillRect(renderer, &ColPoint);
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.pos[0], PlayerObj.pos[1], CollisionPoint[0], CollisionPoint[1]);
+    */
     return castedRay;
 }
 
@@ -144,8 +153,8 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
 //castRayNext functions: Gets a position P(x,y), which is expected to be the point of previous
 //line/collum encounter, and updates it to the next line/collum, returning the offset size
 float castRayNextCollum(float VectorDir[2], float PointP[2]){
+    if(VectorDir[0] == 0) {return 0;}   //Case of vector parallel to Oy
     float nextP[2];
-    //TODO: test case when VectorDir[0] == 0
     int orientation = VectorDir[0] > 0? 1 : -1;
     nextP[0] = PointP[0] + mapS*orientation; 
     nextP[1] = PointP[1] + mapS*(VectorDir[1]/VectorDir[0])*orientation; //mapS * vector tangent
@@ -156,8 +165,9 @@ float castRayNextCollum(float VectorDir[2], float PointP[2]){
 }
 
 float castRayNextLine(float VectorDir[2], float PointP[2]){
+    if(VectorDir[1] == 0) {return 0;}   //Case of vector parallel to Ox
     float nextP[2];
-    int orientation = VectorDir[1] > 0? 1 : -1;
+    int orientation = VectorDir[1] > 0? 1 : -1; 
     nextP[1] = PointP[1] + mapS*orientation; 
     nextP[0] = PointP[0] + mapS*(VectorDir[0]/VectorDir[1])*orientation; //mapS * 1/(vector tangent)
     //Vector size by Pythagoras
@@ -178,7 +188,21 @@ float castRayFirstLine(float VectorDir[2], float PointP[2]){
     //or simply larger than the max size of the other vector, which is 64/|d|. That's why
     //P1Ratio has this value when VectorDir[1], aka Yd, is 0.
     if(VectorDir[1] != 0){
-        int delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.pos[1])%mapS) : ((int)PlayerObj.pos[1])%mapS;
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+        //TODO: This int in float operation may be causing problems
+//        float delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.pos[1])%mapS) : ((int)PlayerObj.pos[1])%mapS;
+        float delta_Y1 = VectorDir[1] > 0? mapS - fmod(PlayerObj.pos[1],mapS) : fmod(PlayerObj.pos[1],mapS);
         P1Ratio = delta_Y1/fabs(VectorDir[1]);
     }
     OffsetVec[0] *= P1Ratio;
@@ -194,7 +218,8 @@ float castRayFirstCollum(float VectorDir[2], float PointP[2]){
     float OffsetVec[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = mapS;
     if(VectorDir[0] != 0){
-        int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.pos[0])%mapS) : ((int)PlayerObj.pos[0])%mapS;
+        //int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.pos[0])%mapS) : ((int)PlayerObj.pos[0])%mapS;
+        float delta_X1 = VectorDir[0] > 0? mapS - fmod(PlayerObj.pos[0],mapS) : fmod(PlayerObj.pos[0],mapS);
         P1Ratio = delta_X1/fabs(VectorDir[0]);
     }
     OffsetVec[0] *= P1Ratio;
@@ -234,6 +259,10 @@ void render_2d(DisplaySettings *display){
 
     //Vector d
     float VectorDir[] = {cos(PlayerObj.angle), sin(PlayerObj.angle)};
+    if(PlayerObj.speed[0] != 0){
+        printf("(%f,%f)\n", PlayerObj.speed[0], PlayerObj.speed[1]);
+        printf("(%f,%f)\n\n", VectorDir[0], VectorDir[1]);
+    }
     float point_E[] = {PlayerObj.pos[0] + DIR_VEC_SIZE*VectorDir[0], PlayerObj.pos[1] + DIR_VEC_SIZE*VectorDir[1]};
     SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.pos[0], PlayerObj.pos[1], point_E[0], point_E[1]);
@@ -250,18 +279,23 @@ void update(DisplaySettings *display){
         SDL_Delay(time_to_wait);
     }
 
+    SDL_SetRenderDrawColor(display->renderer, 155, 155, 0, 255);
+    SDL_RenderDrawLine(display->renderer, PlayerObj.pos[0], PlayerObj.pos[1],
+            PlayerObj.pos[0] + 10*PlayerObj.speed[0], PlayerObj.pos[1] + 10*PlayerObj.speed[1]);
     //TODO: Implement movement as delta time function
     //(x,y) movement
     if(!IsColliding(PlayerObj.pos[0] + 2*PlayerObj.speed[0], PlayerObj.pos[1] + 2*PlayerObj.speed[1])){
+        //TODO: Fix this collision based on speed
         float newX = PlayerObj.pos[0] + PlayerObj.speed[0];
-        if(newX > 0 && newX < 1024) PlayerObj.pos[0] = newX;
+        if(newX > 0 && newX < 512) PlayerObj.pos[0] = (newX);
         float newY = PlayerObj.pos[1] + PlayerObj.speed[1];
-        if(newY > 0 && newY < 512) PlayerObj.pos[1] = newY;
+        if(newY > 0 && newY < 512) PlayerObj.pos[1] = (newY);
     }
     //view direction movement
-    PlayerObj.angle += PlayerObj.turn_speed; 
     display->last_frame_t = SDL_GetTicks();
 }
+
+bool keymap[4];
 
 void process_input(void){
     SDL_Event event;
@@ -270,52 +304,43 @@ void process_input(void){
         case SDL_QUIT:
             break;
 		case SDL_KEYDOWN:
-            //TODO: other switch for event.key.keysym.sym
-			if(event.key.keysym.sym == SDLK_ESCAPE){
-                running = false;
-			}
-			if(event.key.keysym.sym == SDLK_LEFT){
-                PlayerObj.speed[0] = -PLAYER_SPEED;
-            }
-			if(event.key.keysym.sym == SDLK_RIGHT){
-                PlayerObj.speed[0] = PLAYER_SPEED;
-            }
-			if(event.key.keysym.sym == SDLK_DOWN){
-                PlayerObj.speed[1] = PLAYER_SPEED;
-            }
-			if(event.key.keysym.sym == SDLK_UP){
-                PlayerObj.speed[1] = -PLAYER_SPEED;
-            }
-			if(event.key.keysym.sym == SDLK_e){
-                PlayerObj.turn_speed = TURN_SPEED;
-            }
-			if(event.key.keysym.sym == SDLK_q){
-                PlayerObj.turn_speed = -TURN_SPEED;
-            }
+			if(event.key.keysym.sym == SDLK_ESCAPE) {running = false;}
+			if(event.key.keysym.sym == SDLK_d) {keymap[KEY_TILT_RIGHT] = 1;}
+			if(event.key.keysym.sym == SDLK_a) {keymap[KEY_TILT_LEFT] = 1;}
+			if(event.key.keysym.sym == SDLK_w) {keymap[KEY_FORWARD] = 1;}
+			if(event.key.keysym.sym == SDLK_s) {keymap[KEY_BACKWARD] = 1;}
             break;
 		case SDL_KEYUP:
-			if(event.key.keysym.sym == SDLK_LEFT){
-                PlayerObj.speed[0] = 0;
-            }
-			if(event.key.keysym.sym == SDLK_RIGHT){
-                PlayerObj.speed[0] = 0;
-            }
-			if(event.key.keysym.sym == SDLK_DOWN){
-                PlayerObj.speed[1] = 0;
-            }
-			if(event.key.keysym.sym == SDLK_UP){
-                PlayerObj.speed[1] = 0;
-            }
-			if(event.key.keysym.sym == SDLK_e){
-                PlayerObj.turn_speed = 0;
-            }
-			if(event.key.keysym.sym == SDLK_q){
-                PlayerObj.turn_speed = 0;
-            }
+			if(event.key.keysym.sym == SDLK_d) {keymap[KEY_TILT_RIGHT] = 0;}
+			if(event.key.keysym.sym == SDLK_a) {keymap[KEY_TILT_LEFT] = 0;}
+			if(event.key.keysym.sym == SDLK_w) {keymap[KEY_FORWARD] = 0;}
+			if(event.key.keysym.sym == SDLK_s) {keymap[KEY_BACKWARD] = 0;}
             break;
         default:
             break;
     }
+
+    //TODO: see why sometimes speed vector and direction vector are different.
+    //Draw speed vector and see whats happening, like its size and direction varying
+    //It has to do with int and float calculations, 
+    if(keymap[KEY_TILT_LEFT]) {PlayerObj.turn_speed = -TURN_SPEED;}
+    if(keymap[KEY_TILT_RIGHT]) {PlayerObj.turn_speed = TURN_SPEED;}
+    if(!keymap[KEY_TILT_LEFT] && !keymap[KEY_TILT_RIGHT]) {PlayerObj.turn_speed = 0;}
+    PlayerObj.angle += PlayerObj.turn_speed; 
+
+    if(keymap[KEY_FORWARD]){
+        PlayerObj.speed[0] = PLAYER_SPEED*cos(PlayerObj.angle);
+        PlayerObj.speed[1] = PLAYER_SPEED*sin(PlayerObj.angle);
+    }
+    if(keymap[KEY_BACKWARD]){
+        PlayerObj.speed[0] = 0 - PLAYER_SPEED*cos(PlayerObj.angle);
+        PlayerObj.speed[1] = 0 - PLAYER_SPEED*sin(PlayerObj.angle);
+    }
+    if(!keymap[KEY_FORWARD] && !keymap[KEY_BACKWARD]) {
+        PlayerObj.speed[0] = 0;
+        PlayerObj.speed[1] = 0;
+    }
+
 }
 
 void destroy_display(DisplaySettings *display){
