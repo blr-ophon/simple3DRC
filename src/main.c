@@ -70,8 +70,8 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
     bool reverseOrientation = 0;
     for(int j = 0; j < 2; j ++){ //casts half of the rays, once to the right and then to the left
         for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
-            RayObj castedRay = castRayToCollision(renderer, rayDir);
-            float RayDist = castedRay.size;
+            RayObj *castedRay = castRayToCollision(renderer, rayDir);
+            float RayDist = castedRay->size;
 
             //Calculate distance of Collision Point Pc to camera plane c: d(Pc-c) = size*cos(a)
             //cos(a) = (v*i)/(|v|*|i|)
@@ -86,12 +86,13 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             int lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
             SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
-            if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
+            if(castedRay->horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
             SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH};
             SDL_RenderFillRect(renderer, &GameCollumRender);
 
             CollumX = reverseOrientation? CollumX - CAST_3D_OFFSET : CollumX + CAST_3D_OFFSET;
             RotateVecUnit(rayDir, reverseOrientation);
+            free(castedRay);
         }
         //return to normal position and do the same for inverse direction
         rayDir[0] = VectorDir[0];
@@ -102,8 +103,8 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
     }
 }
 
-RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
-    float CollisionPoint[2];
+RayObj *castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
+    RayObj *castedRay = malloc(sizeof(RayObj)); //set direction for simple lighting effect
     float RayVecLines[2] = {PlayerObj.pos[0], PlayerObj.pos[1]};
     float RayVecCollums[2] = {PlayerObj.pos[0], PlayerObj.pos[1]};
 
@@ -129,26 +130,33 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
             }else sizeVC += castRayNextCollum(VectorDir, RayVecCollums);
         }
 
-        if(sizeVL < sizeVC){ //CollisionPoint is the smallest after the increase
-            memcpy(CollisionPoint, RayVecLines, sizeof(CollisionPoint));
-            if(IsColliding(CollisionPoint[0], CollisionPoint[1] + OffsetVec[1])) break;
+        if(sizeVL < sizeVC){ //End Point is the smallest after the increase
+            memcpy(castedRay->endP, RayVecLines, 2*sizeof(float));
+            if(IsColliding(castedRay->endP[0], castedRay->endP[1] + OffsetVec[1])) break;
         }else {
-            memcpy(CollisionPoint, RayVecCollums, sizeof(CollisionPoint));
-            if(IsColliding(CollisionPoint[0]+OffsetVec[0], CollisionPoint[1])) break;
+            memcpy(castedRay->endP, RayVecCollums, 2*sizeof(float));
+            if(IsColliding(castedRay->endP[0]+OffsetVec[0], castedRay->endP[1])) break;
         }
     }
 
-    RayObj castedRay; //set direction for simple lighting effect
-    castedRay.size = sizeVL < sizeVC? sizeVL : sizeVC;
-    castedRay.horizontal = sizeVL < sizeVC? 0 : 1;
+    castedRay->size = sizeVL < sizeVC? sizeVL : sizeVC;
+    castedRay->horizontal = sizeVL < sizeVC? 0 : 1;
     
     //TODO: Make this optional for a debug mode
+    /* colision points as rectangles
     SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
     if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
-    SDL_Rect ColPoint = { CollisionPoint[0], CollisionPoint[1], 4, 4};
+    SDL_Rect ColPoint = {
+        MAP_SCALING * castedRay.endP[0],
+        MAP_SCALING * castedRay.endP[1],
+        MAP_SCALING * 4,
+        MAP_SCALING * 4};
     SDL_RenderFillRect(renderer, &ColPoint);
+    */
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
-    SDL_RenderDrawLine(renderer, PlayerObj.pos[0], PlayerObj.pos[1], CollisionPoint[0], CollisionPoint[1]);
+    SDL_RenderDrawLine(renderer, 
+            MAP_SCALING*PlayerObj.pos[0], MAP_SCALING*PlayerObj.pos[1],
+            MAP_SCALING*castedRay->endP[0], MAP_SCALING*castedRay->endP[1]);
     return castedRay;
 }
 
@@ -231,36 +239,47 @@ void render_2d(DisplaySettings *display){
     SDL_Rect Floor = {GAME_X, GAME_Y+GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT/2}; 
     SDL_RenderFillRect(display->renderer, &Floor);
 
+
+    //Vector d
+    //TODO: Vector d shouldnt be declared/initialized in render function
+    float VectorDir[] = {cos(PlayerObj.angle), sin(PlayerObj.angle)};
+    float point_E[] = {PlayerObj.pos[0] + DIR_VEC_SIZE*VectorDir[0], PlayerObj.pos[1] + DIR_VEC_SIZE*VectorDir[1]};
+    SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
+    SDL_RenderDrawLine(display->renderer, 
+            MAP_SCALING * PlayerObj.pos[0],
+            MAP_SCALING * PlayerObj.pos[1],
+            MAP_SCALING * point_E[0],
+            MAP_SCALING * point_E[1]);
+
+    //Ray and Collision points
+    castRays(display->renderer, VectorDir);
+
     //grid
     for(int i = 0; i < mapY; i++){
         for(int j = 0; j < mapX; j++){
-            SDL_Rect GameWalls = {i*mapS, j*mapS, mapS-1, mapS-1};
-            SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
+            SDL_Rect Game2DGrid = {
+                MAP_SCALING * i*mapS, 
+                MAP_SCALING * j*mapS,
+                MAP_SCALING * (mapS-1),
+                MAP_SCALING * (mapS-1)};
+            SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 55);
             if(mapgrid[mapX*j + i]){
-                SDL_SetRenderDrawColor(display->renderer, 255, 255, 255, 255);
+                SDL_SetRenderDrawColor(display->renderer, 0, 0, 0, 255);
             }
-            SDL_RenderFillRect(display->renderer, &GameWalls);
+            SDL_RenderFillRect(display->renderer, &Game2DGrid);
         }
     }
 
     //player
     SDL_SetRenderDrawColor(display->renderer, 255, 0, 0, 255);
     SDL_Rect playerRect = {
-        PlayerObj.pos[0]-PlayerObj.size/2,
-        PlayerObj.pos[1]-PlayerObj.size/2,
+        MAP_SCALING * PlayerObj.pos[0]-PlayerObj.size/2,
+        MAP_SCALING * PlayerObj.pos[1]-PlayerObj.size/2,
         PlayerObj.size,
         PlayerObj.size
     };
     SDL_RenderFillRect(display->renderer, &playerRect);
 
-    //Vector d
-    float VectorDir[] = {cos(PlayerObj.angle), sin(PlayerObj.angle)};
-    float point_E[] = {PlayerObj.pos[0] + DIR_VEC_SIZE*VectorDir[0], PlayerObj.pos[1] + DIR_VEC_SIZE*VectorDir[1]};
-    SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
-    SDL_RenderDrawLine(display->renderer, PlayerObj.pos[0], PlayerObj.pos[1], point_E[0], point_E[1]);
-
-    //Ray and Collision points
-    castRays(display->renderer, VectorDir);
     SDL_RenderPresent(display->renderer);
 }
 
@@ -358,6 +377,7 @@ void init_display(DisplaySettings *display){
             SDL_WINDOW_BORDERLESS
             );
     display->renderer = SDL_CreateRenderer(display->window, -1, 0);
+    SDL_SetRenderDrawBlendMode(display->renderer, SDL_BLENDMODE_BLEND);
     display->last_frame_t = 0;
 }
 

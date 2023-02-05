@@ -3,10 +3,11 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 512
-#define GAME_WIDTH 512
+#define GAME_WIDTH 1024
 #define GAME_HEIGHT GAME_WIDTH/2
-#define GAME_X 512
+#define GAME_X 0
 #define GAME_Y 0
+#define MAP_SCALING 0.35
 
 #define FPS 60                          //frequencia
 #define FRAME_TARGET_TIME (1000 / FPS)  //Periodo (em ms)
