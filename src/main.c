@@ -78,8 +78,12 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             float ProjectionCos = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
             RayDist *= ProjectionCos;
 
-            float lineH = (mapS*GAME_HEIGHT)/RayDist; if(lineH > GAME_HEIGHT) {lineH = GAME_HEIGHT;}
-            float lineO = GAME_HEIGHT - lineH/2;
+            //H/h = d/MapS, supposing eye can only see an entire wall at a MapS distance.
+            //Anything closer to eye is out of view and so lineH = GAME_HEIGHT
+            int lineH = round((mapS*GAME_HEIGHT)/RayDist); if(lineH > GAME_HEIGHT) {lineH = GAME_HEIGHT;}
+            //This is the offset to put the center of the drawed line in the center of the game screen, and
+            //then add the screen Y position 
+            int lineO = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
             SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
             if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
@@ -192,7 +196,9 @@ float castRayFirstLine(float VectorDir[2], float PointP[2]){
     OffsetVec[0] *= P1Ratio;
     OffsetVec[1] *= P1Ratio;
     PointP[0] += OffsetVec[0];
+    if(PointP[0] < 0) {PointP[0] = 0;}
     PointP[1] += OffsetVec[1];
+    if(PointP[1] < 0) {PointP[1] = 0;}
 
     float size = P1Ratio;
     return size;
@@ -208,7 +214,9 @@ float castRayFirstCollum(float VectorDir[2], float PointP[2]){
     OffsetVec[0] *= P1Ratio;
     OffsetVec[1] *= P1Ratio;
     PointP[0] += OffsetVec[0];
+    if(PointP[0] < 0) {PointP[0] = 0;}
     PointP[1] += OffsetVec[1];
+    if(PointP[1] < 0) {PointP[1] = 0;}
 
     float size = P1Ratio;
     return size;
@@ -242,10 +250,6 @@ void render_2d(DisplaySettings *display){
 
     //Vector d
     float VectorDir[] = {cos(PlayerObj.angle), sin(PlayerObj.angle)};
-    if(PlayerObj.speed[0] != 0){
-        printf("(%f,%f)\n", PlayerObj.speed[0], PlayerObj.speed[1]);
-        printf("(%f,%f)\n\n", VectorDir[0], VectorDir[1]);
-    }
     float point_E[] = {PlayerObj.pos[0] + DIR_VEC_SIZE*VectorDir[0], PlayerObj.pos[1] + DIR_VEC_SIZE*VectorDir[1]};
     SDL_SetRenderDrawColor(display->renderer, 0, 155, 0, 255);
     SDL_RenderDrawLine(display->renderer, PlayerObj.pos[0], PlayerObj.pos[1], point_E[0], point_E[1]);

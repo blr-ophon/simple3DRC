@@ -6,7 +6,7 @@
 #define GAME_WIDTH 512
 #define GAME_HEIGHT GAME_WIDTH/2
 #define GAME_X 512
-#define GAME_Y 0
+#define GAME_Y 256
 
 #define FPS 60                          //frequencia
 #define FRAME_TARGET_TIME (1000 / FPS)  //Periodo (em ms)
