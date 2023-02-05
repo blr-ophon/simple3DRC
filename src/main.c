@@ -138,14 +138,12 @@ RayObj castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
     castedRay.horizontal = sizeVL < sizeVC? 0 : 1;
     
     //TODO: Make this optional for a debug mode
-    /*
     SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
     if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
     SDL_Rect ColPoint = { CollisionPoint[0], CollisionPoint[1], 4, 4};
     SDL_RenderFillRect(renderer, &ColPoint);
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, PlayerObj.pos[0], PlayerObj.pos[1], CollisionPoint[0], CollisionPoint[1]);
-    */
     return castedRay;
 }
 
@@ -188,20 +186,6 @@ float castRayFirstLine(float VectorDir[2], float PointP[2]){
     //or simply larger than the max size of the other vector, which is 64/|d|. That's why
     //P1Ratio has this value when VectorDir[1], aka Yd, is 0.
     if(VectorDir[1] != 0){
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-        //TODO: This int in float operation may be causing problems
-//        float delta_Y1 = VectorDir[1] > 0? mapS - (((int)PlayerObj.pos[1])%mapS) : ((int)PlayerObj.pos[1])%mapS;
         float delta_Y1 = VectorDir[1] > 0? mapS - fmod(PlayerObj.pos[1],mapS) : fmod(PlayerObj.pos[1],mapS);
         P1Ratio = delta_Y1/fabs(VectorDir[1]);
     }
@@ -218,7 +202,6 @@ float castRayFirstCollum(float VectorDir[2], float PointP[2]){
     float OffsetVec[] = {VectorDir[0],VectorDir[1]};
     float P1Ratio = mapS;
     if(VectorDir[0] != 0){
-        //int delta_X1 = VectorDir[0] > 0? mapS - (((int)PlayerObj.pos[0])%mapS) : ((int)PlayerObj.pos[0])%mapS;
         float delta_X1 = VectorDir[0] > 0? mapS - fmod(PlayerObj.pos[0],mapS) : fmod(PlayerObj.pos[0],mapS);
         P1Ratio = delta_X1/fabs(VectorDir[0]);
     }
