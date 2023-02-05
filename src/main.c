@@ -62,13 +62,13 @@ void RotateVecUnit(float Vector[2], bool reverse){
 }
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
-    int CollumX = GAME_X + (WINDOW_WIDTH - GAME_X)/2;
+    int CollumX = GAME_X + GAME_WIDTH/2;
     int temp = CollumX;
     castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
     bool reverseOrientation = 0;
-    for(int j = 0; j < 2; j ++){
+    for(int j = 0; j < 2; j ++){ //casts half of the rays, once to the right and then to the left
         for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
             RayObj castedRay = castRayToCollision(renderer, rayDir);
             float RayDist = castedRay.size;
@@ -83,13 +83,14 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             int lineH = round((mapS*GAME_HEIGHT)/RayDist); if(lineH > GAME_HEIGHT) {lineH = GAME_HEIGHT;}
             //This is the offset to put the center of the drawed line in the center of the game screen, and
             //then add the screen Y position 
-            int lineO = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
+            int lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
             SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
             if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
-            SDL_Rect GameCollumRender = {CollumX, lineO, CAST_3D_OFFSET, lineH};
-            CollumX = reverseOrientation? CollumX - CAST_3D_OFFSET : CollumX + CAST_3D_OFFSET;
+            SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH};
             SDL_RenderFillRect(renderer, &GameCollumRender);
+
+            CollumX = reverseOrientation? CollumX - CAST_3D_OFFSET : CollumX + CAST_3D_OFFSET;
             RotateVecUnit(rayDir, reverseOrientation);
         }
         //return to normal position and do the same for inverse direction
@@ -225,6 +226,10 @@ float castRayFirstCollum(float VectorDir[2], float PointP[2]){
 void render_2d(DisplaySettings *display){
     SDL_SetRenderDrawColor(display->renderer, 50, 50, 50, 255);
     SDL_RenderClear(display->renderer);
+    //paint the floor in a different collor
+    SDL_SetRenderDrawColor(display->renderer, 100, 100, 100, 255);
+    SDL_Rect Floor = {GAME_X, GAME_Y+GAME_HEIGHT/2, GAME_WIDTH, GAME_HEIGHT/2}; 
+    SDL_RenderFillRect(display->renderer, &Floor);
 
     //grid
     for(int i = 0; i < mapY; i++){
