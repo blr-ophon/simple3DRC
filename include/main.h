@@ -23,9 +23,10 @@ typedef struct game_object{
 }GameObject;
 
 typedef struct ray_object{
-    float size;
+    float distance;
     bool horizontal;
     float endP[2];
+    int colorIndex;
 }RayObj;
 
 
@@ -33,7 +34,7 @@ void RotateVecUnit(float Vector[2], bool reverse);
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2]);
 
-RayObj *castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]);
+RayObj *castRayToCollision(float VectorDir[2]);
 
 float castRayNextCollum(float VectorDir[2], float PointP[2]);
 

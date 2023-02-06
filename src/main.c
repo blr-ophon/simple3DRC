@@ -19,11 +19,11 @@ int mapX = 16, mapY = 16, mapS = 32;
 int mapgrid[] = {
     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
     0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,
-    0,0,0,0,1,0,0,0,0,1,0,1,1,1,0,1,
-    1,1,0,0,1,1,1,1,0,1,0,1,0,0,0,1,
-    1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,0,1,0,1,0,1,
-    1,0,1,0,0,1,1,1,0,1,1,1,0,1,0,1,
+    0,0,0,0,1,0,0,0,0,2,0,1,1,1,0,1,
+    1,1,0,0,1,1,1,1,0,2,0,1,0,0,0,1,
+    1,0,0,0,0,0,0,0,0,2,2,1,1,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,0,3,0,1,0,1,
+    1,0,1,0,0,1,1,1,0,3,3,3,0,1,0,1,
     1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,1,
     1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,
@@ -45,8 +45,10 @@ GameObject PlayerObj = {
 
 
 bool IsColliding(int x, int y){
+    //TODO: this doesnt work properly for x and y = 0; Flickering was removed, but
+    //now dis division makes vertical bar appear on grid divisions
     //TODO x/mapS and y/mapS as constants
-    if(x < 0 || x/mapS >= mapX  || y < 0 || y/mapS >= mapY) return true;
+    if(x <= 0 || x/mapS >= mapX  || y <= 0 || y/mapS >= mapY) return true;
     return mapgrid[mapX*(y/mapS) + x/mapS];
 }
 
@@ -58,18 +60,51 @@ void RotateVecUnit(float Vector[2], bool reverse){
     Vector[1] = orientation*UnitAngleSin*temp[0] + UnitAngleCos*temp[1];
 }
 
+SDL_Color IndexToColor(int Index){
+    SDL_Color color;
+    switch(Index){
+        case 0: 
+            color.r = 155;
+            color.g = 0;
+            color.b = 155;
+            break;
+        case 1:
+            color.r = 155;
+            color.g = 0;
+            color.b = 155;
+            break;
+        case 2: 
+            color.r = 55;
+            color.g = 155;
+            color.b = 55;
+            break;
+        case 3: 
+            color.r = 55;
+            color.g = 55;
+            color.b = 155;
+            break;
+    }
+    return color;
+}
+
+void shadeColor(SDL_Color *color){
+    //TODO: make shading factor a constant
+    color->r /= 3;
+    color->g /= 3;
+    color->b /= 3;
+}
+
 void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
     //TODO: learn about textures, render 2d rays to texture and copy it to render after everything 3d
     int CollumX = GAME_X + GAME_WIDTH/2;
     int temp = CollumX;
-    castRayToCollision(renderer, VectorDir);
 
     float rayDir[] = {VectorDir[0], VectorDir[1]};
     bool reverseOrientation = 0;
     for(int j = 0; j < 2; j ++){ //casts half of the rays, once to the right and then to the left
         for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
-            RayObj *castedRay = castRayToCollision(renderer, rayDir);
-            float RayDist = castedRay->size;
+            RayObj *castedRay = castRayToCollision(rayDir);
+            float RayDist = castedRay->distance;
 
             //Calculate distance of Collision Point Pc to camera plane c: d(Pc-c) = size*cos(a)
             //cos(a) = (v*i)/(|v|*|i|)
@@ -83,8 +118,10 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             //then add the screen Y position 
             int lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
-            SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
-            if(castedRay->horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
+            SDL_Color color = IndexToColor(castedRay->colorIndex);
+            if(castedRay->horizontal) shadeColor(&color);
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+
             SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH};
             SDL_RenderFillRect(renderer, &GameCollumRender);
             //2d ray on minimap
@@ -106,7 +143,7 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
     }
 }
 
-RayObj *castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
+RayObj *castRayToCollision(float VectorDir[2]){
     RayObj *castedRay = malloc(sizeof(RayObj)); //set direction for simple lighting effect
     float RayVecLines[2] = {PlayerObj.pos[0], PlayerObj.pos[1]};
     float RayVecCollums[2] = {PlayerObj.pos[0], PlayerObj.pos[1]};
@@ -142,8 +179,11 @@ RayObj *castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
         }
     }
 
-    castedRay->size = sizeVL < sizeVC? sizeVL : sizeVC;
+    castedRay->distance = sizeVL < sizeVC? sizeVL : sizeVC;
     castedRay->horizontal = sizeVL < sizeVC? 0 : 1;
+    int mapCollum = castedRay->endP[0] / mapS;
+    int mapLine = castedRay->endP[1] / mapS;
+    castedRay->colorIndex = mapgrid[mapX*(mapLine) + mapCollum];
     
     //TODO: Make this optional for a debug mode
     /* colision points as rectangles
