@@ -4,9 +4,6 @@
 #include <math.h>
 
 //TODO: Problem with casted rays at y < 32 positions, when looking down
-//TODO: use first person view for controls. Create a vector speed with same direction
-//as dir, this vector applies movement to Player position while 'w' or 's' is pressed. An
-//orthogonal vector works the same for 'a' and 'd'
 //TODO: Multiple modes by pressig F1, F2, F3:
 //One mode is the game with textures, the other is game with no textures and the third
 //is game with 2d view.
@@ -62,6 +59,7 @@ void RotateVecUnit(float Vector[2], bool reverse){
 }
 
 void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
+    //TODO: learn about textures, render 2d rays to texture and copy it to render after everything 3d
     int CollumX = GAME_X + GAME_WIDTH/2;
     int temp = CollumX;
     castRayToCollision(renderer, VectorDir);
@@ -89,6 +87,11 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
             if(castedRay->horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
             SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH};
             SDL_RenderFillRect(renderer, &GameCollumRender);
+            //2d ray on minimap
+            SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
+            SDL_RenderDrawLine(renderer, 
+                    MAP_SCALING*PlayerObj.pos[0], MAP_SCALING*PlayerObj.pos[1],
+                    MAP_SCALING*castedRay->endP[0], MAP_SCALING*castedRay->endP[1]);
 
             CollumX = reverseOrientation? CollumX - CAST_3D_OFFSET : CollumX + CAST_3D_OFFSET;
             RotateVecUnit(rayDir, reverseOrientation);
@@ -152,11 +155,12 @@ RayObj *castRayToCollision(SDL_Renderer *renderer, float VectorDir[2]){
         MAP_SCALING * 4,
         MAP_SCALING * 4};
     SDL_RenderFillRect(renderer, &ColPoint);
-    */
+
     SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
     SDL_RenderDrawLine(renderer, 
             MAP_SCALING*PlayerObj.pos[0], MAP_SCALING*PlayerObj.pos[1],
             MAP_SCALING*castedRay->endP[0], MAP_SCALING*castedRay->endP[1]);
+    */
     return castedRay;
 }
 
@@ -294,11 +298,16 @@ void update(DisplaySettings *display){
     SDL_RenderDrawLine(display->renderer, PlayerObj.pos[0], PlayerObj.pos[1],
             PlayerObj.pos[0] + 10*PlayerObj.speed[0], PlayerObj.pos[1] + 10*PlayerObj.speed[1]);
     //TODO: Implement movement as delta time function
+    
     //(x,y) movement
-    if(!IsColliding(PlayerObj.pos[0] + 2*PlayerObj.speed[0], PlayerObj.pos[1] + 2*PlayerObj.speed[1])){
-        //TODO: Fix this collision based on speed
+    int WallDistanceX = PlayerObj.speed[0] >= 0? mapS/4 : -mapS/4;
+    if(!IsColliding(PlayerObj.pos[0] + PlayerObj.speed[0] + WallDistanceX, PlayerObj.pos[1])){
         float newX = PlayerObj.pos[0] + PlayerObj.speed[0];
         if(newX > 0 && newX < 512) PlayerObj.pos[0] = (newX);
+    }
+
+    int WallDistanceY = PlayerObj.speed[1] >= 0? mapS/4 : -mapS/4;
+    if(!IsColliding(PlayerObj.pos[0], PlayerObj.pos[1] + PlayerObj.speed[1] + WallDistanceY)){
         float newY = PlayerObj.pos[1] + PlayerObj.speed[1];
         if(newY > 0 && newY < 512) PlayerObj.pos[1] = (newY);
     }
@@ -344,8 +353,8 @@ void process_input(void){
         PlayerObj.speed[1] = PLAYER_SPEED*sin(PlayerObj.angle);
     }
     if(keymap[KEY_BACKWARD]){
-        PlayerObj.speed[0] = 0 - PLAYER_SPEED*cos(PlayerObj.angle);
-        PlayerObj.speed[1] = 0 - PLAYER_SPEED*sin(PlayerObj.angle);
+        PlayerObj.speed[0] =  -PLAYER_SPEED*cos(PlayerObj.angle);
+        PlayerObj.speed[1] =  -PLAYER_SPEED*sin(PlayerObj.angle);
     }
     if(!keymap[KEY_FORWARD] && !keymap[KEY_BACKWARD]) {
         PlayerObj.speed[0] = 0;
