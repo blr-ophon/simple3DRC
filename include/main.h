@@ -27,6 +27,7 @@ typedef struct ray_object{
     bool horizontal;
     float endP[2];
     int colorIndex;
+    int textureXindex;
 }RayObj;
 
 

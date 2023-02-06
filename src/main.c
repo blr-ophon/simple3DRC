@@ -7,7 +7,9 @@
 //TODO: Multiple modes by pressig F1, F2, F3:
 //One mode is the game with textures, the other is game with no textures and the third
 //is game with 2d view.
-//TODO: Color is behaving as intended.
+//TODO: Missing features: Ceiling/Floor textures; Remove all global variables; Read BMPs
+//for map and textures; Modularize code into (raycasting algorithm, vertical scanline drawing,
+//color and texture handling, BMP handling, debugger mode.
 
 bool running = true;
 bool DebugMode = false;
@@ -16,21 +18,34 @@ bool DebugMode = false;
 float UnitAngleSin; 
 float UnitAngleCos;
 
+int textureX = 8, textureY = 8;
+
+int texture[][8] = {
+    {0,0,0,3,3,0,0,0},
+    {0,0,3,3,3,3,0,0},
+    {0,3,2,3,3,2,3,0},
+    {0,3,3,3,3,3,3,0},
+    {0,3,2,3,3,2,3,0},
+    {0,3,3,2,2,3,3,0},
+    {0,0,3,3,3,3,0,0},
+    {0,0,0,3,3,0,0,0}
+};
+
 int mapX = 16, mapY = 16, mapS = 32;
 int mapgrid[] = {
     1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,
     0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,
-    0,0,0,0,1,0,0,0,0,2,0,1,1,1,0,1,
-    1,1,0,0,1,1,1,1,0,2,0,1,0,0,0,1,
+    0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,
+    1,1,0,0,1,1,1,1,0,0,0,1,0,0,0,1,
     1,0,0,0,0,0,0,0,0,2,2,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,0,3,0,1,0,1,
-    1,0,1,0,0,1,1,1,0,3,3,3,0,1,0,1,
+    1,0,0,0,0,0,1,0,0,0,0,3,0,0,0,1,
+    1,0,1,0,0,1,1,1,0,0,0,3,0,0,0,1,
     1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,1,
     1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
     1,0,0,0,1,1,1,0,0,0,0,0,0,0,0,1,
     1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,
     1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,
-    1,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,
+    1,0,0,0,1,0,1,0,0,1,0,2,0,3,0,1,
     1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,
     1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,1,
     1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0
@@ -65,23 +80,23 @@ SDL_Color IndexToColor(int Index){
     SDL_Color color;
     switch(Index){
         case 0: 
-            color.r = 155;
+            color.r = 0;
             color.g = 0;
             color.b = 155;
             break;
         case 1:
-            color.r = 155;
+            color.r = 0;
             color.g = 0;
             color.b = 155;
             break;
         case 2: 
-            color.r = 55;
-            color.g = 155;
-            color.b = 55;
+            color.r = 5;
+            color.g = 5;
+            color.b = 5;
             break;
         case 3: 
-            color.r = 55;
-            color.g = 55;
+            color.r = 155;
+            color.g = 155;
             color.b = 155;
             break;
     }
@@ -114,25 +129,33 @@ void castRays(SDL_Renderer *renderer, float VectorDir[2] ){
 
             //H/h = d/MapS, supposing eye can only see an entire wall at a MapS distance.
             //Anything closer to eye is out of view and so lineH = GAME_HEIGHT
-            int lineH = round((mapS*GAME_HEIGHT)/RayDist); if(lineH > GAME_HEIGHT) {lineH = GAME_HEIGHT;}
+            float lineH = round((mapS*GAME_HEIGHT)/RayDist); 
             //This is the offset to put the center of the drawed line in the center of the game screen, and
             //then add the screen Y position 
-            int lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
+            float lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
-            SDL_Color color = IndexToColor(castedRay->colorIndex);
-            if(castedRay->horizontal) shadeColor(&color);
-            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+            for(int i = 0; i < textureY; i++){
+                int colorIndex = texture[i][castedRay->textureXindex];
 
-            SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH};
-            SDL_RenderFillRect(renderer, &GameCollumRender);
+                SDL_Color color = IndexToColor(colorIndex);
+                if(castedRay->horizontal) shadeColor(&color);
+                SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
+
+                SDL_Rect GameCollumRender = {CollumX, lineY, CAST_3D_OFFSET, lineH/textureY};
+                SDL_RenderFillRect(renderer, &GameCollumRender);
+                lineY += lineH/textureX;
+            }
+
             //2d ray on minimap
             SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
             SDL_RenderDrawLine(renderer, 
                     MAP_SCALING*PlayerObj.pos[0], MAP_SCALING*PlayerObj.pos[1],
                     MAP_SCALING*castedRay->endP[0], MAP_SCALING*castedRay->endP[1]);
 
+            //Reposition CollumX and rotate vector to draw another line
             CollumX = reverseOrientation? CollumX - CAST_3D_OFFSET : CollumX + CAST_3D_OFFSET;
             RotateVecUnit(rayDir, reverseOrientation);
+
             free(castedRay);
         }
         //return to normal position and do the same for inverse direction
@@ -191,11 +214,12 @@ RayObj *castRayToCollision(float VectorDir[2]){
     if(castedRay->horizontal){
         WallColorOffset = VectorDir[0] < 0? -1 : 0;
         mapCollum += WallColorOffset;
+        castedRay->textureXindex = fmod(castedRay->endP[1], mapS)/(mapS/textureX);
     }else{ 
         WallColorOffset = VectorDir[1] < 0? -1 : 0;
         mapLine += WallColorOffset;
+        castedRay->textureXindex = fmod(castedRay->endP[0], mapS)/(mapS/textureX);
     }
-
     castedRay->colorIndex = mapgrid[mapX*(mapLine) + mapCollum];
     
     return castedRay;
@@ -273,7 +297,7 @@ float castRayFirstCollum(float VectorDir[2], float PointP[2]){
 }
 
 void render_2d(DisplaySettings *display){
-    SDL_SetRenderDrawColor(display->renderer, 50, 50, 50, 255);
+    SDL_SetRenderDrawColor(display->renderer, 20, 20, 20, 255);
     SDL_RenderClear(display->renderer);
     //paint the floor in a different collor
     SDL_SetRenderDrawColor(display->renderer, 100, 100, 100, 255);
