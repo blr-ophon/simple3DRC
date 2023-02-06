@@ -7,6 +7,7 @@
 //TODO: Multiple modes by pressig F1, F2, F3:
 //One mode is the game with textures, the other is game with no textures and the third
 //is game with 2d view.
+//TODO: Color is behaving as intended.
 
 bool running = true;
 bool DebugMode = false;
@@ -181,26 +182,22 @@ RayObj *castRayToCollision(float VectorDir[2]){
 
     castedRay->distance = sizeVL < sizeVC? sizeVL : sizeVC;
     castedRay->horizontal = sizeVL < sizeVC? 0 : 1;
-    int mapCollum = castedRay->endP[0] / mapS;
-    int mapLine = castedRay->endP[1] / mapS;
+
+    //TODO: This fixes the wall color problem, but makes walls in index 1 have the same bug
+    //as the ones in index 0 had, this requires a fix in collision check
+    int mapCollum = (castedRay->endP[0] / mapS);
+    int mapLine = (castedRay->endP[1] / mapS);
+    int WallColorOffset; 
+    if(castedRay->horizontal){
+        WallColorOffset = VectorDir[0] < 0? -1 : 0;
+        mapCollum += WallColorOffset;
+    }else{ 
+        WallColorOffset = VectorDir[1] < 0? -1 : 0;
+        mapLine += WallColorOffset;
+    }
+
     castedRay->colorIndex = mapgrid[mapX*(mapLine) + mapCollum];
     
-    //TODO: Make this optional for a debug mode
-    /* colision points as rectangles
-    SDL_SetRenderDrawColor(renderer, 55, 0, 55, 255);
-    if(castedRay.horizontal) SDL_SetRenderDrawColor(renderer, 155, 0, 155, 255);
-    SDL_Rect ColPoint = {
-        MAP_SCALING * castedRay.endP[0],
-        MAP_SCALING * castedRay.endP[1],
-        MAP_SCALING * 4,
-        MAP_SCALING * 4};
-    SDL_RenderFillRect(renderer, &ColPoint);
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
-    SDL_RenderDrawLine(renderer, 
-            MAP_SCALING*PlayerObj.pos[0], MAP_SCALING*PlayerObj.pos[1],
-            MAP_SCALING*castedRay->endP[0], MAP_SCALING*castedRay->endP[1]);
-    */
     return castedRay;
 }
 
