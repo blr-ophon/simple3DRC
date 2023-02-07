@@ -5,6 +5,8 @@
 #include <SDL2/SDL.h>
 #include "config.h"
 #include "controls.h"
+#include "textures.h"
+#include "raycasting.h"
 
 typedef struct displaySettings{
     SDL_Window *window;
@@ -22,36 +24,21 @@ typedef struct game_object{
     float turn_speed;
 }GameObject;
 
-typedef struct ray_object{
-    float distance;
-    bool horizontal;
-    float endP[2];
-    int colorIndex;
-    int textureXindex;
-}RayObj;
+struct MapObj{
+    int *mapgrid;
+    int mapS;
+    int mapX;
+    int mapY;
+};
 
+void process_input(GameObject *PlayerObj);
 
-void RotateVecUnit(float Vector[2], bool reverse);
-
-void castRays(SDL_Renderer *renderer, float VectorDir[2]);
-
-RayObj *castRayToCollision(float VectorDir[2]);
-
-float castRayNextCollum(float VectorDir[2], float PointP[2]);
-
-float castRayNextLine(float VectorDir[2], float PointP[2]);
-
-float castRayFirstCollum(float VectorDir[2], float PointP[2]);
-
-float castRayFirstLine(float VectorDir[2], float PointP[2]);
-
-void process_input(void);
-
-void update(DisplaySettings *display);
+void update(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map);
 
 void init_display(DisplaySettings *display);
 
 void destroy_display(DisplaySettings *display);
 
-void render_2d(DisplaySettings *display);
+void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map);
+
 #endif
