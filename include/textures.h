@@ -4,9 +4,17 @@
 
 struct ray_object;
 
-void getRayTexture(struct ray_object *castedRay, float *VectorDir, int *mapgrid, int mapX, int mapS);
+typedef struct textureMap{
+    SDL_Color *pixelMap;
+    int width;
+    int height;
+} TextureMap;
 
-void DrawTextures(SDL_Renderer *renderer, struct ray_object *castedRay, float lineH, float lineY, int CollumX);
+TextureMap *BMPtoArray(void);
+
+void getRayTexture(struct ray_object *castedRay, float *VectorDir, int *mapgrid, int mapX, int mapS, TextureMap *texture);
+
+void DrawTextures(SDL_Renderer *renderer, struct ray_object *castedRay, float lineH, float lineY, int CollumX, TextureMap *texture);
 
 SDL_Color IndexToColor(int Index);
 

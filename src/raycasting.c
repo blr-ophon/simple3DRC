@@ -18,7 +18,7 @@ void RotateVecUnit(float Vector[2], float UnitAngleCos, float UnitAngleSin, bool
 }
 
 
-void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], struct MapObj *map){
+void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], struct MapObj *map, TextureMap *texture){
     float UnitAngleSin = sin(UNIT_ANGLE);
     float UnitAngleCos = cos(UNIT_ANGLE);
     int CollumX = GAME_X + GAME_WIDTH/2;
@@ -28,7 +28,7 @@ void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], stru
     bool reverseOrientation = 0;
     for(int j = 0; j < 2; j ++){ //casts half of the rays, once to the right and then to the left
         for(int i = 0; i < (RAY_NUMBER-1)/2; i++){ //generate 30 rays to one side (right)
-            RayObj *castedRay = castRayToCollision(PlayerPos, rayDir, map);
+            RayObj *castedRay = castRayToCollision(PlayerPos, rayDir, map, texture);
             float RayDist = castedRay->distance;
 
             //Calculate distance of Collision Point Pc to camera plane c: d(Pc-c) = size*cos(a)
@@ -43,7 +43,7 @@ void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], stru
             //then add the screen Y position 
             float lineY = (GAME_HEIGHT/2 - lineH/2) + GAME_Y;
 
-            DrawTextures(renderer, castedRay, lineH, lineY, CollumX);
+            DrawTextures(renderer, castedRay, lineH, lineY, CollumX, texture);
 
             //2d ray on minimap
             SDL_SetRenderDrawColor(renderer, 0, 0, 155, 255);
@@ -66,7 +66,7 @@ void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], stru
     }
 }
 
-RayObj *castRayToCollision(float PlayerPos[], float VectorDir[], struct MapObj *map){
+RayObj *castRayToCollision(float PlayerPos[], float VectorDir[], struct MapObj *map, TextureMap *texture){
     RayObj *castedRay = malloc(sizeof(RayObj)); //set direction for simple lighting effect
     float RayVecLines[2] = {PlayerPos[0], PlayerPos[1]};
     float RayVecCollums[2] = {PlayerPos[0], PlayerPos[1]};
@@ -107,7 +107,7 @@ RayObj *castRayToCollision(float PlayerPos[], float VectorDir[], struct MapObj *
 
     //TODO: This fixes the wall color problem, but makes walls in index 1 have the same bug
     //as the ones in index 0 had, this requires a fix in collision check
-    getRayTexture(castedRay, VectorDir, map->mapgrid, map->mapX, map->mapS);
+    getRayTexture(castedRay, VectorDir, map->mapgrid, map->mapX, map->mapS, texture);
     
     return castedRay;
 }

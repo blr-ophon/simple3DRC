@@ -39,6 +39,6 @@ void init_display(DisplaySettings *display);
 
 void destroy_display(DisplaySettings *display);
 
-void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map);
+void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map, TextureMap *texture);
 
 #endif

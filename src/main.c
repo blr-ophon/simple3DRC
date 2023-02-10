@@ -12,7 +12,7 @@
 
 bool running = true;
 
-void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map){
+void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *map, TextureMap *texture){
     SDL_SetRenderDrawColor(display->renderer, 20, 20, 20, 255);
     SDL_RenderClear(display->renderer);
     //paint the floor in a different collor
@@ -33,7 +33,7 @@ void render_2d(DisplaySettings *display, GameObject *PlayerObj, struct MapObj *m
             MAP_SCALING * point_E[1]);
 
     //Ray and Collision points
-    castRays(display->renderer, PlayerObj->pos, VectorDir, map);
+    castRays(display->renderer, PlayerObj->pos, VectorDir, map, texture);
 
     //grid
     for(int i = 0; i < map->mapY; i++){
@@ -205,11 +205,14 @@ int main(void){
         16      //mapY
     };
 
+    TextureMap *texture1 = BMPtoArray();
+
     while(running){
         process_input(&PlayerObj);
         update(&display, &PlayerObj, &gameMap);
-        render_2d(&display, &PlayerObj, &gameMap);
+        render_2d(&display, &PlayerObj, &gameMap, texture1);
     }
+//    free(&texture1);
     destroy_display(&display);
     return 0;
 }
