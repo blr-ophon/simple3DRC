@@ -3,7 +3,7 @@
 
 TextureMap *BMPtoArray(void){
     TextureMap *texture = malloc(sizeof(TextureMap));
-    FILE *f = fopen("./textures/test.bmp", "rb");
+    FILE *f = fopen("./textures/markitoouro.bmp", "rb");
     if(!f){
         printf("Texture not found\n\n");
         exit(EXIT_FAILURE);
@@ -26,8 +26,8 @@ TextureMap *BMPtoArray(void){
     SDL_Color *pMap = malloc(width*height*sizeof(SDL_Color));
 
     fseek(f, start_offset, SEEK_SET);
-    for(uint32_t i = 0; i < width; i++){ //FOLLOWING LOOP WORKS FOR BPP = 24
-        for(uint32_t j = 0; j < height*4; j+=4){
+    for(int i = height-1; i >= 0; i--){ //FOLLOWING LOOP WORKS FOR BPP = 24
+        for(int j = width*4-4; j >= 0; j-=4){
             fread(&pMap[i*width + j/4].b, 1, 1, f);
             fread(&pMap[i*width + j/4].g, 1, 1, f);
             fread(&pMap[i*width + j/4].r, 1, 1, f);
