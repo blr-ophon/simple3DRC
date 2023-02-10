@@ -1,6 +1,7 @@
 #include "textures.h"
 #include "raycasting.h"
 
+/*
 int textureX = 8, textureY = 8;
 
 int texture[][8] = {
@@ -13,6 +14,50 @@ int texture[][8] = {
     {0,0,3,3,3,3,0,0},
     {0,0,0,3,3,0,0,0}
 };
+*/
+int textureY = 12, textureX = 12;
+
+int texture[][12] = {
+    {0,0,0,3,3,0,0,0,3,2,3,2},
+    {0,0,3,3,3,3,0,0,2,3,2,3},
+    {0,3,2,3,3,2,3,0,3,2,3,2},
+    {0,3,3,3,3,3,3,0,2,3,2,3},
+    {0,3,2,3,3,2,3,0,3,2,3,2},
+    {0,3,3,2,2,3,3,0,2,3,2,3},
+    {0,0,3,3,3,3,0,0,3,2,3,2},
+    {0,0,0,3,3,0,0,0,2,3,2,3},
+    {0,0,0,3,3,0,0,0,3,2,3,2},
+    {0,0,3,3,3,3,0,0,2,3,2,3},
+    {0,3,2,3,3,2,3,0,3,2,3,2},
+    {0,3,3,3,3,3,3,0,2,3,2,3}
+};
+
+void BMPtoArray(SDL_Color *colorsMap[64]){
+    FILE *f = fopen("test.bmp", "rb");
+
+    uint8_t info[54];
+    fread(info, sizeof(uint8_t), 54, f);
+
+    uint32_t start_offset = info[10];
+    uint32_t width = info[18];
+    uint32_t height = info[22];
+    uint16_t bpp = info[28];
+    uint32_t compression = info[30];
+
+    printf("WIDTH: %d\n", width);
+    printf("HEIGHT: %d\n", height);
+    printf("BPP:%d\n", bpp);
+    printf("COMPRESSION: %d\n", compression);
+
+    fseek(f, start_offset, SEEK_SET);
+    for(uint32_t i = 0; i < width; i++){ //FOLLOWING LOOP WORKS FOR BPP = 24
+        for(uint32_t j = 0; j < height*4; j+=4){
+            fread(&colorsMap[i][j/4].b, 1, 1, f);
+            fread(&colorsMap[i][j/4].g, 1, 1, f);
+            fread(&colorsMap[i][j/4].r, 1, 1, f);
+        }
+    }
+}
 
 void getRayTexture(struct ray_object *castedRay, float *VectorDir, int *mapgrid, int mapX, int mapS){
     int mapCollum = (castedRay->endP[0] / mapS);
@@ -22,11 +67,13 @@ void getRayTexture(struct ray_object *castedRay, float *VectorDir, int *mapgrid,
     if(castedRay->horizontal){
         WallColorOffset = VectorDir[0] < 0? -1 : 0;
         mapCollum += WallColorOffset;
-        castedRay->textureXindex = fmod(castedRay->endP[1], mapS)/(mapS/textureX);
+        //Equation: (x%mapS)/mapS  =  textureXindex/textureX
+        castedRay->textureXindex = (fmod(castedRay->endP[1], mapS) / mapS) * textureX;
     }else{ 
         WallColorOffset = VectorDir[1] < 0? -1 : 0;
         mapLine += WallColorOffset;
-        castedRay->textureXindex = fmod(castedRay->endP[0], mapS)/(mapS/textureX);
+        //Equation: (x%mapS)/mapS  =  textureXindex/textureX
+        castedRay->textureXindex = (fmod(castedRay->endP[0], mapS) / mapS) * textureX;
     }
     castedRay->colorIndex = mapgrid[mapX*(mapLine) + mapCollum];
 }
