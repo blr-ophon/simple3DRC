@@ -35,3 +35,9 @@ debug: ${EXEC}
 testleak: ${EXEC}
 	valgrind --leak-check=full --show-leak-kinds=all ./$^
 
+profile: ${EXEC}
+	mkdir -p ./prof
+	rm -rf ./prof/*
+	valgrind --tool=callgrind --dump-instr=yes --simulate-cache=yes --collect-jumps=yes ${EXEC} ${ARGS}
+	mv ./callgrind.* ./prof
+

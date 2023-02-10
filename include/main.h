@@ -4,9 +4,9 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include "config.h"
-#include "controls.h"
 #include "textures.h"
 #include "raycasting.h"
+#include "controls.h"
 
 typedef struct displaySettings{
     SDL_Window *window;
