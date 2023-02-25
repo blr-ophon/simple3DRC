@@ -16,7 +16,7 @@
 #define TURN_SPEED 0.05
 #define DIR_VEC_SIZE 30
 
-#define RAY_NUMBER 500                 //must be odd to have simetry
+#define RAY_NUMBER 257                 //must be odd to have simetry
 #define PI 3.14159265359
 #define FOV 66
 #define FOV_ANGLE (FOV*PI)/180
