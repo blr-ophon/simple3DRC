@@ -3,7 +3,7 @@
 
 TextureMap *BMPtoArray(void){
     TextureMap *texture = malloc(sizeof(TextureMap));
-    FILE *f = fopen("./textures/markitoouro.bmp", "rb");
+    FILE *f = fopen("./textures/test.bmp", "rb");
     if(!f){
         printf("Texture not found\n\n");
         exit(EXIT_FAILURE);
