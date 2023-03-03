@@ -10,7 +10,7 @@ typedef struct textureMap{
     int height;
 } TextureMap;
 
-TextureMap *BMPtoArray(void);
+TextureMap *BMPtoTextureMap(void);
 
 void getRayTexture(struct ray_object *castedRay, float *VectorDir, int *mapgrid, int mapX, int mapS, TextureMap *texture);
 

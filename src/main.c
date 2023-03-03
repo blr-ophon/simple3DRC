@@ -205,7 +205,7 @@ int main(void){
         16      //mapY
     };
 
-    TextureMap *texture1 = BMPtoArray();
+    TextureMap *texture1 = BMPtoTextureMap();
 
     while(running){
         process_input(&PlayerObj);

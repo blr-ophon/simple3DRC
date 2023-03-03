@@ -9,7 +9,6 @@ CFILES_DIR := ./src
 BUILD_DIR := ./build
 
 CFILES := $(wildcard ./src/*.c)
-CFILES := $(filter-out src/test.c, $(CFILES))
 OBJECTS := $(CFILES:$(CFILES_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 EXEC := ./simple3DRC

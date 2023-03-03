@@ -1,11 +1,12 @@
 #include "textures.h"
 #include "raycasting.h"
 
-TextureMap *BMPtoArray(void){
+TextureMap *BMPtoTextureMap(void){
     TextureMap *texture = malloc(sizeof(TextureMap));
+    printf("\nLoading textures...\n\n");
     FILE *f = fopen("./textures/test.bmp", "rb");
     if(!f){
-        printf("Texture not found\n\n");
+        fprintf(stderr, "Texture not found\n\n");
         exit(EXIT_FAILURE);
     }
 
