@@ -36,7 +36,7 @@ void castRays(SDL_Renderer *renderer, float PlayerPos[], float VectorDir[], stru
             float ProjectionCos = rayDir[0]*VectorDir[0] + rayDir[1]*VectorDir[1];
             RayDist *= ProjectionCos;
 
-            //H/h = d/MapS, supposing eye can only see an entire wall at a MapS distance.
+            //H/h = d/MapS, supposing eye can only see an entire wall at a >=MapS distance.
             //Anything closer to eye is out of view and so lineH = GAME_HEIGHT
             float lineH = round((map->mapS*GAME_HEIGHT)/RayDist); 
             //This is the offset to put the center of the drawed line in the center of the game screen, and
@@ -93,7 +93,7 @@ RayObj *castRayToCollision(float PlayerPos[], float VectorDir[], struct MapObj *
             }else sizeVC += castRayNextCollum(VectorDir, RayVecCollums, map->mapS);
         }
 
-        if(sizeVL < sizeVC){ //End Point is the smallest after the increase
+        if(sizeVL < sizeVC){ //End Point is the smallest after the increase. Break if it collides with a wall
             memcpy(castedRay->endP, RayVecLines, 2*sizeof(float));
             if(IsColliding(castedRay->endP[0], castedRay->endP[1] + OffsetVec[1], map)) break;
         }else {

@@ -212,7 +212,8 @@ int main(void){
         update(&display, &PlayerObj, &gameMap);
         render_2d(&display, &PlayerObj, &gameMap, texture1);
     }
-//    free(&texture1);
+
+    free(texture1);
     destroy_display(&display);
     return 0;
 }
