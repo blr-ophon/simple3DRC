@@ -14,11 +14,11 @@ OBJECTS := $(CFILES:$(CFILES_DIR)/%.c=$(BUILD_DIR)/%.o)
 EXEC := ./simple3DRC
 
 ${EXEC}: ${OBJECTS}
-	gcc ${CFLAGS} ${INCLUDES} ${LIBRARIES} $^ -o $@
+	gcc ${CFLAGS} ${INCLUDES} $^ -o $@ ${LIBRARIES} 
 
 ${BUILD_DIR}/%.o: ${CFILES_DIR}/%.c
 	mkdir -p $(dir $@)
-	$(CC) ${CFLAGS} ${INCLUDES} ${LIBRARIES} -c $< -o $@
+	$(CC) ${CFLAGS} ${INCLUDES} -c $< -o $@ ${LIBRARIES}
 
 clean:
 	rm -rf ${OBJECTS}
