@@ -10,7 +10,11 @@ Raycasting engine written in C using SDL2 library. Uses DDA algorithm to cast ra
 
 ## Screenshots
 
-![App Screenshot](https://i.imgur.com/a/Iz4rI5b)
+<p align="center">
+
+![Demo](https://i.imgur.com/a/Iz4rI5b)
+
+</p>
 
 
 ## Requirements
